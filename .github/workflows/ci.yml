@@ -2,11 +2,16 @@ name: Check plugin
 on:
   push:
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     env:
       NODE_OPTIONS: --max-old-space-size=4096
       GOMAXPROCS: '1'
@@ -21,7 +26,20 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run package
+      - name: Attest plugin files
+        if: >-
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+          github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+          github.event.repository.private == false
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/highnote/main.js
+            dist/highnote/manifest.json
+            dist/highnote/styles.css
+          create-storage-record: false
       - uses: actions/upload-artifact@v4
         with:
           name: highnote
           path: dist/highnote/
+          if-no-files-found: error

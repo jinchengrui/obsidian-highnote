@@ -1,5 +1,38 @@
 # Highnote
 
+Add local comments, replies, and highlights to Markdown passages in Obsidian. Review your annotations in a dedicated workspace and export them as Markdown, HTML, or flomo-compatible CSV.
+
+Highnote requires **Obsidian 1.14.4 or later on desktop**. The plugin interface is currently in Chinese. It is designed for personal use and does not provide accounts, collaboration, mentions, or notifications.
+
+## Features
+
+- Select text in Reading view to add a comment or highlight. Continue a discussion with replies, edit individual messages, and mark discussions as resolved.
+- Browse annotations for the current note or all notes. Click a source excerpt to return to its passage. Discussions are retained if their original passage can no longer be located.
+- Review saved comments and highlights in the reading review workspace. Export complete saved content as Markdown or HTML; comments can also be exported as CSV for import into flomo.
+- Annotation changes are available in Reading view. Editing modes allow viewing annotations without modifying them.
+
+## Installation
+
+Until the community directory listing is available, download `main.js`, `manifest.json`, and `styles.css` from the same [GitHub release](https://github.com/jinchengrui/obsidian-highnote/releases). Place them in your vault's `.obsidian/plugins/highnote/` directory, then enable **Highnote** in **Settings → Community plugins**. Use your actual configuration directory if it has a different name.
+
+Open a Markdown note in Reading view, select a passage, and choose the comment or highlighter button. Use the sidebar's menu to open the reading review workspace and export your annotations.
+
+## Storage and privacy
+
+Annotations are stored locally in `.obsidian-highnote/annotations/`, with one JSON file per annotated note path. Highnote does not insert annotations into your Markdown source. Include this hidden directory when backing up or syncing your vault; copying a Markdown file alone does not include its annotations. Earlier test data layouts are not imported or migrated.
+
+- **Network:** The plugin does not make network requests or send annotations to flomo. CSV files are exported locally for you to import. There is no telemetry, advertising, or automatic installation of updates or dependencies. Installing development dependencies is a separate build-time operation.
+- **Filesystem:** Annotation reads and writes use Obsidian's `DataAdapter` API. On desktop, `node:fs.watch` monitors only this vault's `.obsidian-highnote/annotations/` directory so external changes can be detected; hidden folders are outside the regular Vault file index. The plugin closes this watcher when unloaded and does not use Node.js to read or write files outside the vault.
+- **Clipboard:** The HTML exporter includes a **Copy path** button. Only clicking that button writes the note's vault-relative path to the clipboard. It never reads the clipboard or monitors clipboard changes.
+- **External applications:** Opening an HTML export uses the operating system's default application for the locally saved file. No export is uploaded.
+- **Conflicts:** If another process changes an annotation file before a save, Highnote stops the conflicting save and preserves the input draft. It does not automatically merge concurrent changes from multiple devices.
+
+## License
+
+MIT. Copyright (c) 2026 jinchengrui. See [LICENSE](LICENSE).
+
+## 中文说明
+
 在 Obsidian 的 Markdown 笔记旁留下本地评论，在同一讨论中继续回复，并在原文位置失效时保留讨论。
 
 ![选中文字后的浮动评论入口](docs/screenshots/selection-toolbar.png)
@@ -90,7 +123,7 @@ npm run build
 npm run package
 ```
 
-安装文件输出到 `dist/highnote/`。仓库包含依赖锁文件和 GitHub Actions 检查流程；CI 成功后可下载构建工件。正式发布还需要单独上传三个文件到 GitHub Release。
+安装文件输出到 `dist/highnote/`。仓库包含依赖锁文件和 GitHub Actions 检查流程；公开仓库默认分支的推送或手动运行会为三个安装文件生成 GitHub 构建来源证明，通过后可下载 `highnote` 构建产物。其他分支和 PR 继续执行检查，不申请来源证明。正式发布时，将这次产物中的三个文件原样上传到 GitHub Release。
 
 | 代码 | 作用 |
 | --- | --- |
@@ -116,8 +149,8 @@ npm run package
 1. 作者与版权署名为 `jinchengrui`，发布前确认 `manifest.json` 与 `LICENSE` 中的署名一致。
 2. 将源码放入你拥有的公开 GitHub 仓库。仓库根目录必须有 `README.md`、`LICENSE`、`manifest.json`；只提供内部仓库链接无法完成公开提交。
 3. 确认插件名称与 ID 在官方目录中唯一，确认 `package.json`、`manifest.json`、`versions.json` 版本一致。
-4. 从该版本源码构建。创建 GitHub Release，标签与当前 `manifest.json` 中的版本完全相同，与 manifest 版本完全一致，**不要加 `v`**。
-5. 将 `main.js`、`manifest.json`、`styles.css` 分别作为 Release 附件上传。ZIP 可额外提供，但不能替代这三个附件。
+4. 将最终源码推送到公开仓库默认分支，等待 `Check plugin` 中的检查、构建和来源证明全部通过，下载该次 `highnote` 产物。创建 GitHub Release，标签与当前 `manifest.json` 中的版本完全相同，**不要加 `v`**。
+5. 将产物里的 `main.js`、`manifest.json`、`styles.css` 分别作为 Release 附件上传，保持文件内容不变，以便来源证明匹配。ZIP 可额外提供，但不能替代这三个附件。本机构建的文件不自动具备 GitHub 来源证明。
 6. 按[官方当前提交流程](https://docs.obsidian.md/plugins/releasing/submit-plugin)，登录 [Obsidian 社区目录](https://community.obsidian.md)，关联 GitHub 账号并添加插件，处理自动审核反馈。
 
 每次升级提高版本号，重新构建并发布匹配标签的 Release。最终审核结果由官方决定。
@@ -125,6 +158,8 @@ npm run package
 ## 隐私、许可与参考
 
 插件免费，使用 MIT 许可。运行时不发送网络请求，不要求账号，不包含遥测、广告、自更新或远程依赖安装，不访问笔记库之外的文件。构建时 npm 下载依赖属于开发过程，不是插件运行时行为。
+
+批注通过 Obsidian DataAdapter API 读写。桌面端额外使用 `node:fs.watch` 监听当前笔记库的 `.obsidian-highnote/annotations/`，用于发现外部同步或文件修改，卸载时关闭监听。该 Node.js 调用不读取或写入库外文件。HTML 导出页的“复制路径”只在点击时将库内相对路径写入剪贴板，不读取或监听剪贴板；打开 HTML 导出文件通过系统默认应用完成。
 
 交互思路参考 [FloatMark](https://github.com/jinchengrui/obsidian-float-mark)，本项目在独立仓库中自行实现评论数据与界面，没有继承该项目源码。范围仅包含 Markdown 本地评论与标记。
 
