@@ -162,5 +162,3 @@ The GitHub Actions workflow checks the project and generates artifact attestatio
 MIT. Copyright (c) 2026 jinchengrui. See [LICENSE](LICENSE).
 
 [Report an issue](https://github.com/jinchengrui/obsidian-highnote/issues) · [更新记录](docs/更新记录.md)
-
-The interaction concept was inspired by [FloatMark](https://github.com/jinchengrui/obsidian-float-mark). Highnote was implemented independently and does not include source code from that project.
