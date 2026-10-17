@@ -1,166 +1,166 @@
 # Highnote
 
-Add local comments, replies, and highlights to Markdown passages in Obsidian. Review your annotations in a dedicated workspace and export them as Markdown, HTML, or flomo-compatible CSV.
+**Keep your thoughts beside the text. Return to them when you need them.**
 
-Highnote requires **Obsidian 1.14.4 or later on desktop**. The plugin interface is currently in Chinese. It is designed for personal use and does not provide accounts, collaboration, mentions, or notifications.
+Highnote brings compact comments and highlights to Markdown reading in Obsidian, a review dashboard with a date heatmap, and flexible exports for flomo. Your annotations stay in your vault without being inserted into the Markdown source.
 
-## Features
+[Community page](https://community.obsidian.md/plugins/highnote) · [Download a release](https://github.com/jinchengrui/obsidian-highnote/releases) · [中文说明](#中文说明)
 
-- Select text in Reading view to add a comment or highlight. Continue a discussion with replies, edit individual messages, and mark discussions as resolved.
-- Browse annotations for the current note or all notes. Click a source excerpt to return to its passage. Discussions are retained if their original passage can no longer be located.
-- Review saved comments and highlights in the reading review workspace. Export complete saved content as Markdown or HTML; comments can also be exported as CSV for import into flomo.
-- Annotation changes are available in Reading view. Editing modes allow viewing annotations without modifying them.
+**Obsidian 1.14.4+ · Desktop only · Chinese interface · Free and open source**
 
-## Installation
+![Highnote beside a Markdown note: full comments and replies, blue passage focus, and yellow highlights](docs/screenshots/showcase-comments.png)
 
-Until the community directory listing is available, download `main.js`, `manifest.json`, and `styles.css` from the same [GitHub release](https://github.com/jinchengrui/obsidian-highnote/releases). Place them in your vault's `.obsidian/plugins/highnote/` directory, then enable **Highnote** in **Settings → Community plugins**. Use your actual configuration directory if it has a different name.
+Screenshots show the current Chinese interface with example notes.
 
-Open a Markdown note in Reading view, select a passage, and choose the comment or highlighter button. Use the sidebar's menu to open the reading review workspace and export your annotations.
+## Compact comments beside your notes
 
-## Storage and privacy
+Select a passage in Reading view to add a comment or highlight. The compact sidebar keeps the original excerpt above your thoughts, with full comments and replies available in the discussion. Hover to reveal reply controls; the surrounding cards stay in place.
 
-Annotations are stored locally in `.obsidian-highnote/annotations/`, with one JSON file per annotated note path. Highnote does not insert annotations into your Markdown source. Include this hidden directory when backing up or syncing your vault; copying a Markdown file alone does not include its annotations. Earlier test data layouts are not imported or migrated.
+- **Stay with the text.** Select a discussion to highlight its passage. Click its source excerpt to navigate; selecting comment text keeps your reading position.
+- **Keep a thought going.** Add replies, edit or delete individual messages, and resolve a discussion when you are finished. Comments support bold text and ordered or unordered lists.
+- **Find it again.** Browse the current note or all notes, search excerpts and comments, and filter resolved or unresolved discussions. All-note summaries group related messages to use less space.
 
-- **Network:** The plugin does not make network requests or send annotations to flomo. CSV files are exported locally for you to import. There is no telemetry, advertising, or automatic installation of updates or dependencies. Installing development dependencies is a separate build-time operation.
-- **Filesystem:** Annotation reads and writes use Obsidian's `DataAdapter` API. On desktop, `node:fs.watch` monitors only this vault's `.obsidian-highnote/annotations/` directory so external changes can be detected; hidden folders are outside the regular Vault file index. The plugin closes this watcher when unloaded and does not use Node.js to read or write files outside the vault.
-- **Clipboard:** The HTML exporter includes a **Copy path** button. Only clicking that button writes the note's vault-relative path to the clipboard. It never reads the clipboard or monitors clipboard changes.
-- **External applications:** Opening an HTML export uses the operating system's default application for the locally saved file. No export is uploaded.
-- **Conflicts:** If another process changes an annotation file before a save, Highnote stops the conflicting save and preserves the input draft. It does not automatically merge concurrent changes from multiple devices.
+The sidebar follows Obsidian's light and dark themes. Highlights use one shared color, configurable in settings. This is a personal annotation tool; no author avatars, accounts, mentions, or collaboration setup are needed.
 
-## License
+## Review your reading by date
 
-MIT. Copyright (c) 2026 jinchengrui. See [LICENSE](LICENSE).
+Open **阅读回顾** (Reading review) from the sidebar menu to bring annotations from across your vault into one workspace.
+
+![Reading review dashboard with a date heatmap, search, and cards showing original excerpts followed by comments](docs/screenshots/showcase-review.png)
+
+- Switch between comments and highlights, and between the current note and all notes.
+- Use the heatmap to select a date, or search original excerpts, comments, and source note names. A matching discussion retains its context and related replies.
+- Open a card's source details and choose **回到原文** (Back to source) to return to the note. Wide windows can show the review and source side by side.
+
+The heatmap counts annotation records by creation date; it does not measure time spent reading. The review uses your current saved annotations. It does not create a second archive of discussions. Original excerpts are retained from the time you annotated them, so a later source edit does not erase what prompted the thought.
+
+![Reading review and the source note side by side, with the matching passage highlighted](docs/screenshots/showcase-source.png)
+
+## Take your thoughts to flomo
+
+Choose **导出** (Export) in Reading review, then **flomo CSV**. Preview the result before saving a CSV file for import into flomo.
+
+![flomo CSV export with discussion grouping, content options, and a preview of content and created_at columns](docs/screenshots/showcase-flomo.png)
+
+Choose one memo per discussion or one per message. Include replies, keep the original excerpt with your comments or export comments alone, and optionally append the source note name. Choose how successive messages are separated.
+
+For a custom layout, use the template variables `{上下文}` (excerpt), `{评论}` (comments), `{来源}` (source), and `{记录日期}` (record date). The preview shows the actual `content` and `created_at` fields that will be written to the CSV. Long previews have a full-content view; exported content is not truncated.
+
+![Custom flomo export template with excerpt, comment, source, and date variables and a live CSV preview](docs/screenshots/showcase-template.png)
+
+**This is a local CSV export, not an automatic flomo sync.** Import the saved file using flomo's import feature. Highnote does not connect to flomo or require a flomo API key.
+
+| Format | Best for | Contents |
+| --- | --- | --- |
+| Markdown | Continuing to write in Obsidian | Original excerpts, comments or highlights, and source details |
+| HTML | Reading outside Obsidian | A standalone file for offline browser reading |
+| flomo CSV | Adding reading thoughts to flomo | Comments, optional replies and excerpts, and record dates |
+
+Exports support the current note or all notes and are saved to the vault root. Existing filenames receive a numeric suffix. The document scope determines the export; review search, date filters, and on-screen pagination do not narrow it. Unsubmitted drafts and deleted messages are excluded. CSV is available for comments; highlights can be exported as Markdown or HTML.
+
+## Get started
+
+1. Open the [Highnote community page](https://community.obsidian.md/plugins/highnote). When **Add to Obsidian** is available, use it to install, then enable Highnote in **Settings → Community plugins**. If the listing is still under review, use the manual installation below.
+2. Open a Markdown note in **Reading view**. Select a passage and choose the comment or highlighter button.
+3. Continue the discussion in the sidebar, or open **阅读回顾** from its menu to review and export your annotations.
+
+Annotation creation, editing, replies, deletion, and resolution require Reading view. Source mode and Live Preview let you view annotations without modifying them.
+
+<details>
+<summary>Manual installation</summary>
+
+Download `main.js`, `manifest.json`, and `styles.css` from the same [GitHub release](https://github.com/jinchengrui/obsidian-highnote/releases). Put all three in `.obsidian/plugins/highnote/` inside your vault, then enable Highnote in **Settings → Community plugins**. Use your actual configuration directory if it has a different name.
+
+</details>
+
+## Your notes and your data
+
+Annotations live in **`.obsidian-highnote/annotations/`**, with one JSON file per annotated note path. Highnote does not insert annotation markup into your Markdown source. Include the hidden directory in backups or sync; copying a `.md` file alone does not copy its annotations. Exports are reading copies, not a replacement for the JSON backup.
+
+| When this happens | Highnote's behavior |
+| --- | --- |
+| A tracked edit changes the text before a passage | The anchor follows the edit when its position can be established reliably |
+| A passage is removed or can no longer be located reliably | The saved excerpt and discussion remain available, marked as unlocatable |
+| A note or folder is renamed inside Obsidian | Annotation paths are updated |
+| A source note is deleted | Annotations remain available with a missing-source state |
+| Another process changes the annotation file before a save | The conflicting save stops; the input draft is retained for retry |
+| The last message in a discussion is deleted | The empty discussion and underline are removed; a separate highlight is retained |
+
+Drafts last only for the current plugin session. Earlier test data layouts are not imported or migrated. Empty JSON files may remain after annotations are deleted or a note is moved; they contain no historical message snapshot and can be reused by that note path.
+
+Selection works best with ordinary text in a paragraph or list. Selections across complex rendered blocks, embeds, tables, or formulas may not map reliably to source text. Unlocatable passages are not silently rebound. Concurrent edits across devices are not automatically merged.
+
+### Privacy and permissions
+
+- **Network:** No network requests, telemetry, advertising, or automatic installation of updates or dependencies. Exports are saved locally; Highnote does not upload annotations. Downloading development dependencies is a separate build-time operation.
+- **Filesystem:** Annotation reads and writes use Obsidian's `DataAdapter`. On desktop, `node:fs.watch` monitors only this vault's `.obsidian-highnote/annotations/` directory to detect external changes, because hidden folders are outside the regular Vault index. The watcher closes when the plugin unloads. This Node.js use does not read or write files outside the vault.
+- **Clipboard:** The HTML exporter includes a **Copy path** button. Clicking it writes the note's vault-relative path to the clipboard. It never reads the clipboard or monitors clipboard changes.
+- **External applications:** Opening an HTML export uses the system's default application for the saved local file. Nothing is uploaded.
+
+The review and sidebar render records in batches, and long discussions have message pagination. All saved content remains searchable and available for export. Saving one note still involves its JSON file, so the cost grows with that note's annotations.
 
 ## 中文说明
 
-在 Obsidian 的 Markdown 笔记旁留下本地评论，在同一讨论中继续回复，并在原文位置失效时保留讨论。
+**在原文旁写下想法，回顾时读懂当时的自己。**
 
-![选中文字后的浮动评论入口](docs/screenshots/selection-toolbar.png)
+Highnote 为 Obsidian 的 Markdown 阅读提供简洁的批注侧栏、按日期回顾的看板，以及适合导入 flomo 的 CSV 导出。评论和标记保存在笔记库中，不写进 Markdown 正文。
 
-适用于 **Obsidian 1.14.4 及以上桌面版**，界面语言为中文。首版不支持移动端。
+适用于 **Obsidian 1.14.4 及以上桌面版**，当前界面为中文。免费，使用 MIT 许可。
 
-回顾详情通过唯一的“回到原文”入口定位并打开讨论。导出窗口常用排版与自定义模板互相切换，CSV 预览显示 `content`、`created_at` 两列；长内容通过“查看完整内容”读取，保存文件仍保留全文。
+### 简洁批注，把空间留给内容
 
-历史变更和当时的验证结果见 [更新记录](docs/更新记录.md)。
+阅读模式选中文字，即可添加评论或高亮。侧栏按“原文在上、想法在下”展示，评论与回复保留全文，长讨论可翻页查看。回复入口悬停出现，不挤动卡片；选中的讨论带有淡蓝色背景，并与原文联动。
 
-## 可以做什么
+点击原文摘录才跳转，选择评论文字时保持阅读位置。可以连续回复、编辑或删除消息，也可以把讨论标记为已解决。支持当前文档和全部文档查看，全部文档会合并展示同一讨论，让浏览更紧凑。侧栏跟随明暗主题，标记使用设置中统一指定的颜色。
 
-- 阅读模式选中文字后，点击荧光笔直接标记，点击评论图标填写评论。两种操作也有同名命令。非阅读模式没有新增入口。
-- 阅读模式选中文字后，点击选区旁自动出现的评论图标。蓝色下划线表示该段已有评论，选中的讨论对应原文增加淡蓝色背景，侧栏卡片显示蓝色左边线。
-- 点击卡片或进入底部回复框，会选中该讨论并同步高亮，保持正文滚动位置；点击卡片顶部的原文摘录才定位，点击正文下划线可打开对应讨论。点击普通正文或空白处取消选中，移出鼠标仍保留选中。消息旁显示月日与时间，跨年显示年份，悬停可查看秒数。
-- 将鼠标移到当前文档的卡片上，或用键盘聚焦卡片，底部出现“回复…”入口。Enter 发送、Shift+Enter 换行。可连续回复多次，消息按时间排列，不显示引用框。
-- 评论正文支持 `**加粗**`、`- 无序列表`、`1. 有序列表`；其他 Markdown 语法按普通文本显示。
-- 消息“…”菜单仅有编辑、删除；卡片右上角提供上一条／下一条讨论和解决按钮，不提供删除整个讨论入口。
-- 在“当前文档”和“全部文档”间切换，按文件分组搜索评论，筛选已解决／未解决，并独立勾选无法定位的讨论。全部文档的合并内容包含评论和所有未删除回复，正文完整显示；点击后就地查看完整消息并回复、编辑、删除。“返回合并展示”收起讨论。
-- 通过侧栏“…”打开阅读回顾，在右上角“导出”选择 Markdown、HTML 或 flomo CSV。现有导出命令也使用同一弹窗。生成独立文件；已删除消息不显示或导出，失效和已解决讨论保留状态。导出不替代 JSON 备份，也不提供导入或恢复绑定。
+[查看批注侧栏截图](docs/screenshots/showcase-comments.png)
 
-## 安装
+### 阅读回顾看板，找回散落的想法
 
-1. 在 Obsidian 中创建一个独立测试笔记库并打开。
-2. 将安装包里的 `highnote` 文件夹放入该库的 `.obsidian/plugins/`。最终路径为 `.obsidian/plugins/highnote/main.js`，同目录还应有 `manifest.json` 和 `styles.css`。如果修改过配置目录名，请使用实际目录。
-3. 打开“设置 → 第三方插件”，关闭安全模式，然后启用 **Highnote**。
-4. 打开 `.md` 笔记并切换到阅读模式，选中文字后添加评论或标记。左侧消息图标或“打开评论”命令可重新打开侧栏。
+从侧栏菜单打开“阅读回顾”，集中查看当前文档或全部文档的评论、回复与标记。热力图按创建日期展示记录数量，点击日期即可回看当天的记录；搜索支持原文、评论和来源文档。热力图统计批注记录，不统计阅读时长。
 
-尚未发布到官方社区目录。发布前使用本地安装包。
+回顾页跟随已保存批注的变化，不会另外快照一份讨论。创建批注时的原文摘录会保留，便于理解当时的语境。打开“查看出处与讨论”后，可以通过“回到原文”定位；窗口足够宽时，回顾与原文并排显示。
 
-## 评论和标记如何保存
+[查看回顾看板](docs/screenshots/showcase-review.png) · [查看原文联动](docs/screenshots/showcase-source.png)
 
-评论和标记保存在笔记库根目录的 **`.obsidian-highnote/annotations/`** 文件夹，`annotations` 表示批注。每篇曾保存评论或标记的 Markdown 笔记对应一个 `note-<32位摘要>.json` 文件。摘要取笔记相对路径 SHA-256 的前 32 位十六进制，包含前缀和扩展名共 42 个字符。JSON 内保留完整路径、讨论、消息和标记 ID；加载校验名称与归属，发现冲突或损坏时停止覆盖。隐藏目录通过 Obsidian DataAdapter 读写，更新使用原子 process 校验冲突，不修改 Markdown 正文。本测试版只读取新命名的聚合 JSON，不加载或迁移旧版 UUID、64 位摘要文件。
+### 导出到 flomo，自己决定保留什么
 
-| 操作 | 结果 |
-| --- | --- |
-| 在原文前插入文字，或在原文内做小幅编辑 | 编辑器记录能确认位置时，评论跟随原文 |
-| 整段原文被替换、删除，或外部修改后无法可靠定位 | 保留引用及讨论，标记“原文位置失效” |
-| 在 Obsidian 中改名、移动笔记或文件夹 | 评论更新到新路径 |
-| 删除整个笔记 | 讨论保留，标记“原文件已删除” |
-| 删除已被回复的消息 | 清空正文并隐藏该消息，后续回复保留 |
-| 删除最后一条未删除消息 | 空讨论和下划线移除，同段标记保留；评论和标记都删空后，原子保存空 JSON，避免删除时误伤并发写入 |
-| 卸载插件 | 评论数据目录保留；重新安装后可以加载 |
+在阅读回顾右上角点击“导出”，选择 **flomo CSV**。可以选择“一段讨论一条笔记”或“一条消息一条笔记”，决定是否包含回复、原文与来源。既可以保留“原文＋想法”，也可以只导出自己的评论。
 
-当前测试版只读取和写入 `.obsidian-highnote/annotations/`，不兼容旧测试目录或直接放在根目录下的旧 JSON，也不自动导入或迁移旧数据。父目录 `.obsidian-highnote` 统一收纳插件文件，`annotations` 子目录只保存评论和标记数据。隐藏目录不会出现在 Obsidian 常规文件列表中；备份或同步时需包含整个 `.obsidian-highnote`。
+自定义模板支持 `{上下文}`、`{评论}`、`{来源}`、`{记录日期}`，可调整内容顺序和多次评论之间的连接方式。右侧预览 CSV 的 `content`、`created_at` 字段，长内容可单独展开查看，保存的文件保留全文。
 
-清空批注或在 Obsidian 中改名后，旧路径的空 JSON 会保留，内容不再进入评论索引。它不保存历史消息快照，文件数量随曾批注过的文档路径增长；重新使用该路径会复用文件。
+这是**先导出本地 CSV，再到 flomo 导入**的流程，不会自动同步，也不需要填写 flomo API Key。纯标记可导出 Markdown 或 HTML；flomo CSV 用于评论。
 
-原文位置失效后，讨论仍可在“全部文档”中查看。本版暂不提供重新绑定。
+[查看 flomo 导出](docs/screenshots/showcase-flomo.png) · [查看自定义模板](docs/screenshots/showcase-template.png)
 
-备份和迁移时需要同时包含 Markdown 文件与 `.obsidian-highnote`。单独复制 `.md` 不会带走评论。退出插件前保存正在输入的内容；新评论和回复的未提交草稿只在当前插件会话内保留，未持久化到磁盘。
+### 安装与使用
 
-行内回复入口固定预留 22px 高度和 3px 上边距，悬停或聚焦只改变可见性，不挤动其他讨论。点击后展开格式工具和发送按钮，支持中文输入法。已有草稿的回复框保持展开。未发送的回复草稿在本次插件会话内保留；取消会清空当前草稿。
+1. 打开 [Highnote 官方社区页](https://community.obsidian.md/plugins/highnote)，安装入口可用时点击 **Add to Obsidian**，再到“设置 → 第三方插件”启用。若仍处于审核中，可从 [GitHub Releases](https://github.com/jinchengrui/obsidian-highnote/releases) 下载同一版本的三个安装文件，放入 `.obsidian/plugins/highnote/`。
+2. 打开 Markdown 笔记并切换到**阅读模式**，选中文字添加评论或标记。
+3. 从侧栏菜单进入“阅读回顾”，集中查看记录，或在右上角选择导出。
 
-## 边界与恢复
+非阅读模式可以查看批注，不能新增、回复、编辑、删除或解决讨论。没有账号、多人协作、提及或提醒功能，适合个人阅读和写作。
 
-- **本地单人使用**：没有账号、实时协作、通知或 `@` 提醒。通过已有工具同步数据时，确保 JSON 文件被包含；首版未验证多设备同时写入。同一讨论在不同设备上同时修改仍可能产生同步冲突。
-- **冲突时停止覆盖**：保存前会比较磁盘上的原数据。发现变化即停止保存并提示重新加载，输入框保留当前内容。重新加载后重新提交，不自动合并多端消息。
-- **外部改名**：插件未运行时由其他软件改名的笔记无法保证自动识别，原讨论仍在“全部文档”中；恢复原路径后可重新定位。
-- **阅读模式选区**：常见段落、加粗文字和列表可用。跨渲染块、复杂链接、嵌入、公式、表格等选区可能无法可靠映射源码；请缩小到同一段落中的普通文字。不会为了匹配相同短语而猜测位置。
-- **数据损坏**：无效或未来版本的 JSON 会保留并提示，不覆盖为空数据。恢复备份后使用“…”中的“重新加载数据”。不要手工改文件名或回复标识。
-- **失效后恢复**：一旦标记失效，恢复相同文本也不会静默重新关联，避免挂到另一段相同内容。
-- **删除并非安全擦除**：插件会清除当前评论数据中的消息正文，但旧内容可能仍存在于你使用的文件历史、同步版本和备份中。
+导出范围可选当前文档或全部文档，文件默认存笔记库根目录，重名自动追加序号。搜索、日期筛选及分页不改变导出范围，未发送草稿和已删除消息不导出。
 
-## 本地开发
+### 备份、边界与隐私
 
-需要 Node.js 22 或以上。先安装依赖，再运行开发构建：
+- **备份整个批注目录。** 评论和标记位于 `.obsidian-highnote/annotations/`。单独复制 Markdown 不会带走批注，导出文件也不能替代 JSON 备份。旧测试版数据不自动迁移。
+- **原文变化后保留想法。** 能可靠确认位置的编辑会更新锚点；原文删除或无法定位时保留摘录与讨论，不自动绑定到另一段相似文字，也不提供手动重新绑定。
+- **保存冲突时停止覆盖。** 发现同步工具或其他窗口改动文件时，停止当前保存，保留草稿供重新加载后重试。多设备同时写入仍可能冲突；未提交草稿不跨插件重启保存。
+- **本地处理。** 插件不发起网络请求，不上传批注，不含遥测、广告、自更新或自动安装依赖。批注由 Obsidian DataAdapter 读写，`node:fs.watch` 仅监听当前库的批注目录，卸载时关闭，不读取或写入库外文件。
+- **按操作使用剪贴板。** HTML 导出页的“复制路径”只在点击时写入库内相对路径，不读取或监听剪贴板；打开 HTML 文件交给系统默认应用。
 
-```bash
-npm ci
-npm run dev
-```
+## Development
 
-`dev` 监听源码变化并更新仓库根目录 `main.js`。修改后，把三个插件文件复制到测试库，然后禁用并重新启用插件。已有初始化完成的测试库时，可用复制脚本：
+Use Node.js 22 or later. Install locked dependencies with `npm ci`; run `npm run dev` for a watch build. Before releasing, run `npm run lint`, `npm test`, `npm run build`, and `npm run package`. Installable files are written to `dist/highnote/`.
 
-```bash
-npm run install:local -- /absolute/path/to/test-vault
-```
+The GitHub Actions workflow checks the project and generates artifact attestations for builds from the public repository's default branch. Upload the three files from that run unchanged to a GitHub Release whose tag exactly matches `manifest.json`'s version, without a `v` prefix. Local build files do not automatically have GitHub attestations.
 
-自定义配置目录可作为第二个参数传入。脚本只复制插件文件，不自动启用插件，不改评论数据。请将示例路径替换成自己的测试库路径。
+## License and feedback
 
-发布前执行：
+MIT. Copyright (c) 2026 jinchengrui. See [LICENSE](LICENSE).
 
-```bash
-npm run lint
-npm test
-npm run build
-npm run package
-```
+[Report an issue](https://github.com/jinchengrui/obsidian-highnote/issues) · [更新记录](docs/更新记录.md)
 
-安装文件输出到 `dist/highnote/`。仓库包含依赖锁文件和 GitHub Actions 检查流程；公开仓库默认分支的推送或手动运行会为三个安装文件生成 GitHub 构建来源证明，通过后可下载 `highnote` 构建产物。其他分支和 PR 继续执行检查，不申请来源证明。正式发布时，将这次产物中的三个文件原样上传到 GitHub Release。
-
-| 代码 | 作用 |
-| --- | --- |
-| `src/model.ts`、`src/store.ts` | 数据校验、消息关系、串行保存及冲突检测 |
-| `src/anchors.ts` | 编辑器位置映射和外部修改后的保守重定位 |
-| `src/editor.ts`、`src/reading.ts` | 后台编辑事务观察与阅读模式标注交互 |
-| `src/reading-map.ts` | 阅读选区与 Markdown 源码的映射 |
-| `src/ui.ts`、`src/format.ts` | 评论侧栏、输入框和有限格式渲染 |
-| `src/main.ts` | 插件生命周期及 Obsidian 文件事件 |
-| `src/review-export-modal.ts`、`src/flomo.ts` | 三格式导出窗口、模板与 CSV 生成 |
-| `src/review.ts`、`src/review-model.ts`、`src/review-content.ts` | 主工作区回顾、增量检索与原文优先阅读导出 |
-
-## 性能与主题
-
-回顾页按批展示讨论及长讨论消息。侧栏也为长讨论提供每批 40 条消息的分页，正文与回复保留全文，导出范围不受分页影响。每篇 Markdown 仍对应一个 JSON，单篇文档的保存成本会随批注量增长。
-
-默认保留蓝色评论焦点和绿色热力图。主题或 CSS 片段可覆盖 `--hn-accent` 与 `--hn-heat-accent`，统一调整侧栏、原文下划线、导出选中态及热力图。标记颜色仍由插件设置控制。
-
-开发构建保留源码映射与可读代码，正式构建使用常规压缩减少安装包体积。
-
-## 发布到官方社区
-
-1. 作者与版权署名为 `jinchengrui`，发布前确认 `manifest.json` 与 `LICENSE` 中的署名一致。
-2. 将源码放入你拥有的公开 GitHub 仓库。仓库根目录必须有 `README.md`、`LICENSE`、`manifest.json`；只提供内部仓库链接无法完成公开提交。
-3. 确认插件名称与 ID 在官方目录中唯一，确认 `package.json`、`manifest.json`、`versions.json` 版本一致。
-4. 将最终源码推送到公开仓库默认分支，等待 `Check plugin` 中的检查、构建和来源证明全部通过，下载该次 `highnote` 产物。创建 GitHub Release，标签与当前 `manifest.json` 中的版本完全相同，**不要加 `v`**。
-5. 将产物里的 `main.js`、`manifest.json`、`styles.css` 分别作为 Release 附件上传，保持文件内容不变，以便来源证明匹配。ZIP 可额外提供，但不能替代这三个附件。本机构建的文件不自动具备 GitHub 来源证明。
-6. 按[官方当前提交流程](https://docs.obsidian.md/plugins/releasing/submit-plugin)，登录 [Obsidian 社区目录](https://community.obsidian.md)，关联 GitHub 账号并添加插件，处理自动审核反馈。
-
-每次升级提高版本号，重新构建并发布匹配标签的 Release。最终审核结果由官方决定。
-
-## 隐私、许可与参考
-
-插件免费，使用 MIT 许可。运行时不发送网络请求，不要求账号，不包含遥测、广告、自更新或远程依赖安装，不访问笔记库之外的文件。构建时 npm 下载依赖属于开发过程，不是插件运行时行为。
-
-批注通过 Obsidian DataAdapter API 读写。桌面端额外使用 `node:fs.watch` 监听当前笔记库的 `.obsidian-highnote/annotations/`，用于发现外部同步或文件修改，卸载时关闭监听。该 Node.js 调用不读取或写入库外文件。HTML 导出页的“复制路径”只在点击时将库内相对路径写入剪贴板，不读取或监听剪贴板；打开 HTML 导出文件通过系统默认应用完成。
-
-交互思路参考 [FloatMark](https://github.com/jinchengrui/obsidian-float-mark)，本项目在独立仓库中自行实现评论数据与界面，没有继承该项目源码。范围仅包含 Markdown 本地评论与标记。
-
-开发及发布依据：[开发者政策](https://docs.obsidian.md/community-directory/developer-policies)、[提交要求](https://docs.obsidian.md/community-directory/submission-requirements-for-plugins)、[插件规范](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)。官方规则可能更新，提交时再次核对。
+The interaction concept was inspired by [FloatMark](https://github.com/jinchengrui/obsidian-float-mark). Highnote was implemented independently and does not include source code from that project.
