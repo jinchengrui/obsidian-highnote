@@ -201,7 +201,13 @@ export class ReviewExportModal extends Modal {
     const csv = this.format === 'flomo_csv'; this.configRoot.hidden = !csv; this.standard.hidden = csv;
     this.presetOptions.hidden = this.config.custom; this.templateOptions.hidden = !this.config.custom;
     this.modalEl.toggleClass('is-csv', csv); this.extension.setText(csv ? '.csv' : `.${this.format}`);
-    for (const [format, radio] of this.formats) { radio.checked = format === this.format; radio.closest('label')!.toggleClass('is-selected', radio.checked); radio.disabled = this.busy || format === 'flomo_csv' && this.kind === 'highlights'; }
+    for (const [format, radio] of this.formats) {
+      radio.checked = format === this.format;
+      radio.disabled = this.busy || format === 'flomo_csv' && this.kind === 'highlights';
+      const card = radio.closest('label')!;
+      card.toggleClass('is-selected', radio.checked);
+      card.toggleClass('is-disabled', radio.disabled);
+    }
     this.contentEl.querySelector<HTMLElement>('.hn-flomo-custom-separator')!.hidden = this.config.separator !== 'custom';
     for (const [key, field] of this.options) field.disabled = this.busy || this.config.custom && ['preset', 'labels', 'source'].includes(key) || !this.config.custom && key === 'template';
     for (const radio of this.contentEl.querySelectorAll<HTMLInputElement>('input[name="hn-flomo-preset"]')) {

@@ -1,7 +1,7 @@
 {
   "id": "highnote",
   "name": "Highnote",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "minAppVersion": "1.14.4",
   "description": "Add local comments and replies to Markdown passages, and keep detached discussions.",
   "author": "jinchengrui",

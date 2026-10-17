@@ -175,7 +175,7 @@ export class CommentsView extends ItemView {
     setIcon(searchIcon, 'search');
     this.search = searchRow.createEl('input', {cls: 'hn-search', attr: {type: 'search'}});
     this.search.addEventListener('input', event => {
-      if ((event as InputEvent).isComposing) return;
+      if ('isComposing' in event && event.isComposing) return;
       this.query = this.search.value; this.page = 1; this.render();
     });
     this.search.addEventListener('compositionstart', () => { this.searchComposing = true; });

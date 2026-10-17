@@ -8,7 +8,6 @@ body {
   display: flex; flex-direction: column; height: 100%; padding: 12px 10px; gap: 8px;
   background: var(--background-secondary); container-type: inline-size;
 }
-.hn-sidebar [hidden] {display: none !important;}
 .hn-header, .hn-actions, .hn-format-toolbar {display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
 .hn-header {justify-content: space-between; flex-wrap: nowrap; gap: 4px; min-height: 28px; flex-shrink: 0;}
 .hn-header h3 {margin: 0; font-size: 16px; font-weight: 600; white-space: nowrap;}
@@ -54,7 +53,6 @@ body {
 .hn-card .hn-quote.is-expanded, .hn-card .hn-highlight-quote.is-expanded {-webkit-line-clamp: unset; max-height: none;}
 .hn-sidebar button.hn-quote-expand {height: auto; padding: 2px 0 0 11px; font-size: 12px; color: var(--hn-accent); border: 0; box-shadow: none; background: transparent;}
 .hn-card-footer {position: relative; margin-top: 3px;}
-.hn-card-footer:has(.is-expanded) {padding-top: 28px;}
 .hn-thread-tools {position: relative;flex-shrink:0;min-height:28px; display: flex; align-items: center; gap: 0; border: 1px solid var(--background-modifier-border); border-radius: 14px; padding: 1px 2px; background: var(--background-primary); opacity: 0; pointer-events: none; transition: opacity 100ms ease; z-index: 2;}
 .hn-card:hover .hn-thread-tools, .hn-card:focus-within .hn-thread-tools {opacity: 1; pointer-events: auto;}
 .hn-sidebar .hn-icon-button {display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 5px; border: 0; box-shadow: none; background: transparent; color: var(--text-muted); border-radius: 5px; cursor: pointer;}
@@ -142,7 +140,7 @@ body {
 .hn-color-actions {display: flex; align-items: center; justify-content: space-between; gap: 8px;}
 .hn-color-actions button {height: 26px; padding: 0 6px; box-shadow: none; background: transparent; font-size: 12px; white-space: nowrap; color: var(--text-muted);}
 .hn-color-actions button:hover {background: var(--background-modifier-hover); color: var(--text-normal);}
-.hn-color-actions .hn-color-custom {display: flex; align-items: center; flex-wrap: wrap; column-gap: 5px; row-gap: 0; height: auto; min-height: 26px;}
+.hn-color-actions .hn-color-custom {display: flex; align-items: center; flex-wrap: wrap; gap: 0 5px; height: auto; min-height: 26px;}
 .hn-color-custom-icon {order: -1; width: 14px; height: 14px; border-radius: 50%; background: conic-gradient(#f25b60, #ffe324, #59c653, #3ccce5, #8da4ff, #b38aef, #f25b60);}
 .hn-color-custom-value {font-size: 10px; font-variant-numeric: tabular-nums;}
 .hn-color-custom.is-selected {color: var(--interactive-accent);}
@@ -174,7 +172,6 @@ body {
 /* All-document summaries expose actions on hover without expanding their content. */
 .hn-sidebar button.hn-overview-reply {display:block;width:100%;height:22px;padding:1px 0;text-align:left;border:0;border-radius:5px;box-shadow:none;background:transparent;color:var(--text-faint);font-size:13px;line-height:1.5;opacity:0;pointer-events:none;}
 .hn-card:hover .hn-overview-reply,.hn-card:focus-within .hn-overview-reply {opacity:1;pointer-events:auto;}
-.hn-card-footer:has(.is-expanded) {padding-top:0;}
 .hn-inline-reply textarea.hn-inline-reply-input {padding-right:0;}
 @container (max-width:300px) {
   .hn-card-header {flex-wrap:wrap;gap:6px;}
@@ -184,7 +181,7 @@ body {
 @media (hover:none) {.hn-sidebar button.hn-overview-reply,.hn-inline-reply {opacity:1;pointer-events:auto;}}
 
 /* Main workspace review: bounded card batches and native Obsidian panes. */
-.hn-review {overflow:auto!important; padding:24px 28px 48px; overflow-anchor:none; container-type:inline-size;}
+.workspace-leaf-content .view-content.hn-review {overflow:auto; padding:24px 28px 48px; overflow-anchor:none; container-type:inline-size;}
 .hn-review-page {width:100%; max-width:none; margin:auto; color:var(--text-normal);}
 .hn-review-heading {display:flex; align-items:center; justify-content:space-between; gap:16px;}
 .hn-review-heading h1 {font-size:26px; margin:0;}
@@ -264,7 +261,7 @@ body {
 .hn-review-format-card>div {display:flex; align-items:center; gap:6px;}
 .hn-review-format-card p {font-size:10px; color:var(--text-muted); margin:4px 0 0 20px;}
 .hn-review-format-card.is-selected,.hn-flomo-preset.is-selected {border-color:var(--interactive-accent); background:color-mix(in srgb,var(--interactive-accent) 6%,var(--background-primary));}
-.hn-review-format-card:has(input:disabled) {opacity:.5;}
+.hn-review-format-card.is-disabled {opacity:.5;}
 .hn-flomo-layout {display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px;}
 .hn-review-export-modal:not(.is-csv) .hn-flomo-layout {display:block;}
 .hn-flomo-config select,.hn-flomo-config textarea {width:100%; font-size:12px;}
@@ -309,7 +306,6 @@ body {
 /* Keep the export controls visible; read long content in a separate bounded view. */
 .modal.hn-review-export-modal {padding:18px 20px; max-height:calc(100vh - 32px);}
 .hn-review-export-modal .modal-content {display:flex; flex-direction:column; min-height:0; overflow:visible;}
-.hn-review-export [hidden] {display:none !important;}
 .hn-review-export-modal .modal-header {margin-bottom:6px;}
 .hn-review-export-modal .modal-title {font-size:18px;}
 .hn-review-export-description {margin:0 0 10px; font-size:11px; line-height:1.5; overflow-wrap:anywhere;}
@@ -423,3 +419,7 @@ body {
 .hn-sidebar .hn-message-pagination button:disabled {opacity: .35; cursor: default;}
 .hn-sidebar .hn-message-pagination span {white-space: nowrap;}
 .hn-sidebar .hn-message-pagination .hn-icon-button {width: 22px; height: 24px; padding: 4px; flex-shrink: 0;}
+
+/* Hidden state wins over the component layout without overriding theme rules globally. */
+.workspace-leaf-content .hn-sidebar [hidden],
+.hn-review-export-modal .hn-review-export [hidden] {display:none;}

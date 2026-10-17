@@ -104,11 +104,12 @@ function readerRuntime(): void {
       const value = text.data; const lower = value.toLocaleLowerCase();
       let at = lower.indexOf(query), from = 0;
       if (at < 0) continue;
-      // Exported HTML runs in a plain browser, without Obsidian DOM helpers.
+      // This function is serialized into standalone HTML. Its browser has no Obsidian helpers.
       const fragment = doc.createDocumentFragment();
       while (at >= 0) {
         fragment.append(doc.createTextNode(value.slice(from,at)));
-          const mark = doc.createElement('mark'); mark.className = 'search-hit'; mark.textContent = value.slice(at,at+query.length); fragment.append(mark);
+        // Keep user text inert; createEl is unavailable in the standalone browser export.
+        const mark = doc.createElement('mark'); mark.className = 'search-hit'; mark.textContent = value.slice(at,at+query.length); fragment.append(mark);
         from = at+query.length; at = lower.indexOf(query,from);
       }
       fragment.append(doc.createTextNode(value.slice(from))); text.replaceWith(fragment);
@@ -136,7 +137,7 @@ function readerRuntime(): void {
     syncReplyButton();
   }
   function reset(): void {search.value = ''; if (status) status.value = 'all'; invalid.checked = false; filter();}
-  search.addEventListener('input', event => {if ((event as InputEvent).isComposing) return; window.clearTimeout(timer);timer = window.setTimeout(filter,120);});
+  search.addEventListener('input', event => {if ('isComposing' in event && event.isComposing) return; window.clearTimeout(timer);timer = window.setTimeout(filter,120);});
   search.addEventListener('compositionend', filter);
   status?.addEventListener('change',filter); invalid.addEventListener('change',filter);
   clear.addEventListener('click',reset); doc.querySelector('#empty-clear')!.addEventListener('click',reset);
