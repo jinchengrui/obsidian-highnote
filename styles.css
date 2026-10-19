@@ -423,3 +423,44 @@ body {
 /* Hidden state wins over the component layout without overriding theme rules globally. */
 .workspace-leaf-content .hn-sidebar [hidden],
 .hn-review-export-modal .hn-review-export [hidden] {display:none;}
+
+/* Mobile review keeps native scrolling and larger touch targets. */
+.workspace-leaf-content .view-content.hn-review-mobile {padding:16px 12px calc(24px + env(safe-area-inset-bottom,0px));}
+.hn-review-mobile .hn-review-heading {align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:12px;}
+.hn-review-mobile .hn-review-heading h1 {font-size:22px;}
+.hn-review-mobile .hn-review-description {font-size:12px; line-height:1.6;}
+.hn-review-mobile .hn-review-heading-actions {width:100%; gap:6px; flex-wrap:wrap;}
+.hn-review-mobile .hn-review-heading-actions select {flex:1; min-width:0; max-width:none;}
+.hn-review-mobile button,.hn-review-mobile .hn-review-heading-actions select {min-height:40px; height:auto; font-size:13px;}
+.hn-review-mobile .hn-review-search {height:40px; max-width:none; font-size:16px;}
+.hn-review-mobile .hn-review-controls {gap:8px; flex-wrap:wrap;}
+.hn-review-mobile .hn-review-replies {min-height:40px; font-size:13px;}
+.hn-review-mobile .hn-review-card {padding:12px;}
+.hn-review-mobile .hn-review-context {padding:8px 10px; font-size:14px; line-height:1.7;}
+.hn-review-mobile .hn-review-body {font-size:15px; line-height:1.75;}
+.hn-review-mobile .hn-review-footer {margin-top:8px;}
+.hn-review-mobile .hn-review-details-link {font-size:13px; padding:4px 0;}
+.hn-review-mobile .hn-review-calendar {--hn-heat-cell:18px; --hn-heat-row:32px; padding:12px 10px;}
+.hn-review-mobile .hn-review-calendar-title {gap:6px;}
+.hn-review-mobile .hn-review-calendar-actions {width:100%; justify-content:space-between;}
+.hn-review-mobile .hn-review-calendar-actions button {min-width:40px; font-size:12px;}
+.hn-review-mobile .hn-review-days .hn-review-day {min-height:32px;}
+.hn-review-mobile .hn-review-pagination {flex-wrap:wrap; gap:6px;}
+.is-mobile .hn-review-details-modal .hn-review-detail-heading {flex-wrap:wrap;}
+.is-mobile .hn-review-details-modal button {min-height:40px;}
+.is-mobile .hn-review-details-modal .hn-review-body {font-size:15px;}
+.is-mobile .hn-review-export-modal {padding:16px; max-height:calc(100% - 16px);}
+.is-mobile .hn-review-export-modal button,.is-mobile .hn-review-export-modal select {min-height:40px;}
+.is-mobile .hn-review-export-modal input[type="text"],.is-mobile .hn-review-export-modal textarea {font-size:16px;}
+
+.hn-directory-setting {flex-wrap:wrap;}
+.hn-directory-setting .setting-item-control {flex-wrap:wrap;}
+.hn-directory-setting input {width:240px; max-width:100%;}
+.hn-directory-status {width:100%; font-size:12px; color:var(--text-warning); overflow-wrap:anywhere;}
+.hn-directory-status:empty {display:none;}
+.is-mobile .hn-directory-setting input {width:100%; font-size:16px;}
+.hn-migration-setting {flex-wrap:wrap; gap:12px;}
+.hn-migration-setting .setting-item-control {width:100%; flex-wrap:wrap; justify-content:flex-start; gap:10px;}
+.hn-migration-field {display:flex; flex:1 1 180px; flex-direction:column; gap:6px; text-align:start; font-size:var(--font-ui-small); color:var(--text-muted);}
+.hn-migration-field input {width:100%; min-width:0;}
+.hn-migration-setting .setting-item-control > button {align-self:flex-end;}

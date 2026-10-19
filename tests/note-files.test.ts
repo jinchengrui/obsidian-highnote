@@ -40,9 +40,9 @@ function disk() {
   return {files, folders, api, adapter: api as unknown as DataAdapter, inject(callback: (path: string) => void) { beforeProcess = callback; }};
 }
 
-test('annotations are stored below the hidden root and directories are only created when saving', async () => {
-  assert.equal(DATA_ROOT, '.obsidian-highnote');
-  assert.equal(DATA_FOLDER, '.obsidian-highnote/annotations');
+test('annotations are stored below the visible root and directories are only created when saving', async () => {
+  assert.equal(DATA_ROOT, 'Highnote');
+  assert.equal(DATA_FOLDER, 'Highnote/annotations');
   const state = disk(), files = new NoteFiles(state.adapter);
   assert.deepEqual(await files.list(), []); assert.equal(state.folders.size, 0);
   await files.create(key, 'saved');
@@ -50,6 +50,30 @@ test('annotations are stored below the hidden root and directories are only crea
   assert.deepEqual(await files.list(), [key]);
   assert.deepEqual([...state.folders], [DATA_ROOT, DATA_FOLDER]);
   assert.equal(state.files.size, 1);
+});
+
+test('configured directories create ancestors on first save and isolate same-key data from the default', async () => {
+  const state = disk(), old = new NoteFiles(state.adapter);
+  await old.create(key, 'old record');
+  const custom = new NoteFiles(state.adapter, undefined, 'Custom/批注/annotations');
+  assert.deepEqual(await custom.list(), []);
+  assert.equal(state.folders.has('Custom'), false);
+  await custom.create(key, 'custom record');
+  assert.deepEqual(await custom.list(), [key]);
+  assert.equal(await old.read(key), 'old record');
+  assert.equal(await custom.read(key), 'custom record');
+  await custom.compareAndWrite(key, 'custom record', 'edited custom record');
+  assert.equal(await old.read(key), 'old record');
+  assert.ok(state.folders.has('Custom/批注/annotations'));
+});
+
+test('a file occupying a custom parent blocks both loading and saving without overwrites', async () => {
+  const state = disk(); state.files.set('Highnote', 'existing note');
+  const files = new NoteFiles(state.adapter, undefined, 'Highnote/annotations');
+  await assert.rejects(files.list(), /同名文件/u);
+  await assert.rejects(files.create(key, 'record'), /同名文件/u);
+  assert.equal(state.files.get('Highnote'), 'existing note');
+  assert.equal(state.folders.size, 0);
 });
 
 test('old test directories or files are ignored and never prevent saving new data', async () => {
