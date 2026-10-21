@@ -3,8 +3,8 @@ import {DATA_FOLDER} from './model';
 import {NoteFiles} from './note-files';
 import type {ThreadFiles} from './store';
 
-/** Mobile review never creates, repairs, renames or rewrites annotation data. */
-export class ReviewFiles implements ThreadFiles {
+/** Reuse unchanged JSON on mobile; writes still use NoteFiles' atomic checks. */
+export class CachedNoteFiles implements ThreadFiles {
   private files: NoteFiles;
   private cache = new Map<string, {stamp: string; raw: string}>();
   constructor(private adapter: DataAdapter, directory = DATA_FOLDER) { this.files = new NoteFiles(adapter, undefined, directory); }
@@ -32,6 +32,10 @@ export class ReviewFiles implements ThreadFiles {
     else this.cache.delete(key);
     return raw;
   }
-  create(): Promise<void> { return Promise.reject(new Error('手机版仅支持阅读回顾，不能修改批注。')); }
-  compareAndWrite(): Promise<void> { return this.create(); }
+  async create(key: string, raw: string): Promise<void> {
+    try { await this.files.create(key, raw); } finally { this.cache.delete(key); }
+  }
+  async compareAndWrite(key: string, expected: string, next: string): Promise<void> {
+    try { await this.files.compareAndWrite(key, expected, next); } finally { this.cache.delete(key); }
+  }
 }

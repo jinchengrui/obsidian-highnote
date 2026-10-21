@@ -18,15 +18,15 @@ const dataDirectory=ev('app.plugins.plugins.highnote.dataFolder');
 const dataParents=dataDirectory.split('/').map((_,index,parts)=>parts.slice(0,index+1).join('/'));
 const dataPath=dataDirectory+'/note-'+createHash('sha256').update(path).digest('hex').slice(0,32)+'.json';
 const raw=JSON.stringify(note,null,2), results={};
-assert.equal(ev('app.plugins.plugins.highnote.isMobileReview'),true,'Enable mobile emulation before running this script');
+assert.equal(ev('app.plugins.plugins.highnote.isMobile'),true,'Enable mobile emulation before running this script');
 ev(`(()=>{window.hnMobileCheck={layout:app.workspace.getLayout(),dark:document.body.classList.contains('theme-dark'),settings:structuredClone(app.plugins.plugins.highnote.settings)};return true})()`);
 try{
  await ev(`(async()=>{const a=app.vault.adapter;for(const p of ${JSON.stringify(dataParents)})if(!await a.exists(p))await a.mkdir(p);await a.write(${JSON.stringify(dataPath)},${JSON.stringify(raw)});await app.vault.create(${JSON.stringify(path)},${JSON.stringify(source)});await app.plugins.plugins.highnote.openReview();return true})()`);
  await until(`document.querySelectorAll('.hn-review-card').length===1`);
  ev(`(()=>{const v=app.workspace.getActiveViewOfType(app.plugins.plugins.highnote.app.workspace.getLeavesOfType('highnote-review')[0].view.constructor);v.calendarOpen=false;v.refresh(true);return true})()`);
- const state=ev(`(()=>{const p=app.plugins.plugins.highnote;return {mobile:p.isMobileReview,modify:p.canModify,reading:p.readingViews.size,editor:p.editorViews.size,watcher:p.dataWatcher,commands:Object.keys(app.commands.commands).filter(k=>k.startsWith('highnote:')),text:document.querySelector('.hn-review-card').textContent}})()`);
- assert.ok(state.mobile && !state.modify);assert.equal(state.reading,0);assert.equal(state.editor,0);assert.equal(state.watcher,null);
- assert.deepEqual(state.commands,['highnote:open-review','highnote:refresh-review']);assert.ok(state.text.includes('手机查看回复全文'));results.load=state;
+ const state=ev(`(()=>{const p=app.plugins.plugins.highnote;return {mobile:p.isMobile,modify:p.canModify,reading:p.readingViews.size,editor:p.editorViews.size,watcher:p.dataWatcher,commands:Object.keys(app.commands.commands).filter(k=>k.startsWith('highnote:')),text:document.querySelector('.hn-review-card').textContent}})()`);
+ assert.ok(state.mobile && !state.modify);assert.equal(state.watcher,null);
+ assert.ok(state.commands.includes('highnote:add-comment')&&state.commands.includes('highnote:add-highlight'));assert.ok(state.text.includes('手机查看回复全文'));results.load=state;
  // Force the full viewport to a phone width, including touch-mode layout.
  call('dev:cdp','method=Emulation.setDeviceMetricsOverride','params='+JSON.stringify({width:390,height:844,deviceScaleFactor:1,mobile:true}));
  await pause(250);
@@ -53,23 +53,16 @@ try{
  assert.ok(ev(`(()=>{const m=document.querySelector('.hn-review-details-modal');return m.scrollWidth<=m.clientWidth+1})()`));
  ev(`(()=>{document.querySelector('[aria-label="回到原文"]').click();return true})()`);
  await until(`app.workspace.getActiveFile()?.path===${JSON.stringify(path)}`);
- assert.equal(ev(`document.querySelectorAll('.hn-sidebar,.hn-selection-toolbar,.markdown-preview-view .hn-mark,.markdown-preview-view .hn-highlight').length`),0);
+ await until(`!!document.querySelector('.hn-sidebar-mobile')`);
  results.source=true;
- // All phone-side annotation write paths must refuse before disk changes.
- assert.equal(ev(`(async()=>{try{await app.plugins.plugins.highnote.store.reply(${JSON.stringify(thread.id)},'禁止写入');return false}catch{return true}})()`),true);
- assert.equal(ev(`(async()=>{try{await app.plugins.plugins.highnote.highlight({filePath:${JSON.stringify(path)},source:${JSON.stringify(source)},from:8,to:10});return false}catch{return true}})()`),true);
- // Edit/delete the local source while its synchronized annotations remain untouched.
- ev(`(async()=>{await app.vault.modify(app.vault.getFileByPath(${JSON.stringify(path)}),'修改后的手机原文');await app.plugins.plugins.highnote.refreshMobileReview(true);return true})()`);
- assert.equal(ev(`app.vault.adapter.read(${JSON.stringify(dataPath)})`),raw);
  await ev(`app.plugins.plugins.highnote.openReview()`);
- results.readOnly=true;
  // External sync updates a record; unchanged reload must preserve index version.
  note.threads[0].messages[0].body='同步后的新评论';note.threads[0].revision++;note.revision++;
  const next=JSON.stringify(note,null,2);
- ev(`(async()=>{await app.vault.adapter.write(${JSON.stringify(dataPath)},${JSON.stringify(next)});await app.plugins.plugins.highnote.refreshMobileReview();return true})()`);
+ ev(`(async()=>{await app.vault.adapter.write(${JSON.stringify(dataPath)},${JSON.stringify(next)});await app.plugins.plugins.highnote.refreshMobileData();return true})()`);
  await until(`document.querySelector('.hn-review-card').textContent.includes('同步后的新评论')`);
  const version=ev(`app.plugins.plugins.highnote.store.version`);
- ev(`app.plugins.plugins.highnote.refreshMobileReview()`);
+ ev(`app.plugins.plugins.highnote.refreshMobileData()`);
  assert.equal(ev(`app.plugins.plugins.highnote.store.version`),version);results.refresh=true;
  // Phone export UI and small dark layout must not introduce horizontal scrolling.
  ev(`(()=>{document.querySelector('[aria-label="导出阅读回顾"]').click();return true})()`);
@@ -90,7 +83,7 @@ try{
  }
  results.export=true;
  // Missing local source cannot detach or modify the synchronized annotation file.
- ev(`(async()=>{const f=app.vault.getFileByPath(${JSON.stringify(path)});for(const l of app.workspace.getLeavesOfType('markdown'))if(l.view.file===f)l.detach();await app.vault.delete(f);await app.plugins.plugins.highnote.refreshMobileReview(true);await app.plugins.plugins.highnote.openReview();return true})()`);
+ ev(`(async()=>{const f=app.vault.getFileByPath(${JSON.stringify(path)});for(const l of app.workspace.getLeavesOfType('markdown'))if(l.view.file===f)l.detach();await app.vault.delete(f);await app.plugins.plugins.highnote.refreshMobileData(true);await app.plugins.plugins.highnote.openReview();return true})()`);
  assert.equal(ev(`app.vault.adapter.read(${JSON.stringify(dataPath)})`),next);
  assert.ok(ev(`app.plugins.plugins.highnote.store.get(${JSON.stringify(thread.id)})?.anchor.state==='attached'`));
  results.missingSource=true;
@@ -98,5 +91,5 @@ try{
  console.log(JSON.stringify(results,null,2));
 }finally{
  call('dev:cdp','method=Emulation.clearDeviceMetricsOverride');
- ev(`(async()=>{const s=window.hnMobileCheck,p=app.plugins.plugins.highnote;for(const m of p.openModals)m.close();const file=app.vault.getFileByPath(${JSON.stringify(path)});if(file){for(const l of app.workspace.getLeavesOfType('markdown'))if(l.view.file===file)l.detach();await app.vault.delete(file);}if(await app.vault.adapter.exists(${JSON.stringify(dataPath)}))await app.vault.adapter.remove(${JSON.stringify(dataPath)});document.body.classList.toggle('theme-dark',s.dark);document.body.classList.toggle('theme-light',!s.dark);p.settings=s.settings;await p.saveData(s.settings);await p.refreshMobileReview(true);await app.workspace.changeLayout(s.layout);delete window.hnMobileCheck;return true})()`);
+ ev(`(async()=>{const s=window.hnMobileCheck,p=app.plugins.plugins.highnote;for(const m of p.openModals)m.close();const file=app.vault.getFileByPath(${JSON.stringify(path)});if(file){for(const l of app.workspace.getLeavesOfType('markdown'))if(l.view.file===file)l.detach();await app.vault.delete(file);}if(await app.vault.adapter.exists(${JSON.stringify(dataPath)}))await app.vault.adapter.remove(${JSON.stringify(dataPath)});document.body.classList.toggle('theme-dark',s.dark);document.body.classList.toggle('theme-light',!s.dark);p.settings=s.settings;await p.saveData(s.settings);await p.refreshMobileData(true);await app.workspace.changeLayout(s.layout);delete window.hnMobileCheck;return true})()`);
 }

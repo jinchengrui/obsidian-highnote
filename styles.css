@@ -464,3 +464,46 @@ body {
 .hn-migration-field {display:flex; flex:1 1 180px; flex-direction:column; gap:6px; text-align:start; font-size:var(--font-ui-small); color:var(--text-muted);}
 .hn-migration-field input {width:100%; min-width:0;}
 .hn-migration-setting .setting-item-control > button {align-self:flex-end;}
+
+/* Touch annotations use the available pane width on phones and tablets. */
+.hn-selection-toolbar.hn-selection-touch {width:208px; height:52px; gap:4px; padding:4px; border-radius:14px; box-shadow:var(--shadow-l); touch-action:manipulation; user-select:none; -webkit-user-select:none;}
+.hn-selection-touch .hn-selection-comment,.hn-selection-touch .hn-selection-highlight {flex:1 1 0; width:auto; height:44px; min-width:0; gap:8px; font-size:15px; padding:8px 12px;}
+.hn-selection-touch svg {width:20px; height:20px;}
+.hn-sidebar-mobile {padding:12px 10px max(12px,env(safe-area-inset-bottom,0px)); gap:8px;}
+.hn-sidebar-mobile .hn-header {flex-wrap:wrap;}
+.hn-sidebar-mobile .hn-header-actions {margin-left:auto;}
+.hn-sidebar-mobile .hn-icon-button {width:44px; height:44px; padding:12px; flex-shrink:0;}
+.hn-sidebar-mobile .hn-icon-button svg {width:18px; height:18px;}
+.hn-sidebar-mobile button,.hn-sidebar-mobile select.hn-scope,.hn-sidebar-mobile select.hn-status-filter {min-height:44px;}
+.hn-sidebar-mobile input.hn-search {height:44px; font-size:16px; padding-left:34px;}
+.hn-sidebar-mobile .hn-search-icon {top:14px; left:12px;}
+.hn-sidebar-mobile .hn-filters {flex-wrap:wrap;}
+.hn-sidebar-mobile .hn-location-filter {min-height:44px;}
+.hn-sidebar-mobile .hn-card {padding:10px;}
+.hn-sidebar-mobile .hn-card-header {flex-wrap:wrap; gap:4px;}
+.hn-sidebar-mobile .hn-card-header .hn-quote-block {flex-basis:100%;}
+.hn-sidebar-mobile .hn-thread-tools {opacity:1; pointer-events:auto; margin-left:auto; min-height:44px; border:none; background:transparent;}
+.hn-sidebar-mobile .hn-message-more,.hn-sidebar-mobile .hn-highlight-remove {opacity:1; pointer-events:auto; right:-4px; top:0;}
+.hn-sidebar-mobile .hn-message-meta,.hn-sidebar-mobile .hn-highlight-card-header {min-height:44px; padding-right:44px;}
+.hn-sidebar-mobile .hn-message-body {font-size:15px; line-height:1.7;}
+.hn-sidebar-mobile .hn-inline-reply {opacity:1; pointer-events:auto;}
+.hn-sidebar-mobile .hn-inline-reply textarea.hn-inline-reply-input {font-size:16px; min-height:44px; height:44px; padding:10px 4px;}
+.hn-sidebar-mobile .hn-inline-reply.is-expanded textarea.hn-inline-reply-input {height:96px; min-height:72px; padding:8px; resize:vertical;}
+.hn-sidebar-mobile .hn-inline-reply-actions {position:sticky; bottom:0; padding-bottom:env(safe-area-inset-bottom,0px); background:var(--background-primary);}
+.hn-sidebar-mobile .hn-inline-reply-actions button {height:44px; min-width:64px;}
+.hn-sidebar-mobile .hn-mobile-reply {display:block; width:100%; min-height:44px; text-align:start; padding:10px 4px; font-size:16px; font-weight:normal; color:var(--text-muted); background:transparent; border:0; box-shadow:none;}
+.is-mobile .hn-message-modal {width:min(620px,calc(100vw - 16px)); max-width:calc(100vw - 16px); max-height:calc(var(--hn-visible-height,100dvh) - 20px); padding:16px;}
+.is-mobile .hn-message-modal .hn-modal {display:flex; flex-direction:column; min-height:0; overflow:auto; padding-bottom:env(safe-area-inset-bottom,0px);}
+.is-mobile .hn-modal textarea {font-size:16px; min-height:100px; height:clamp(100px,24dvh,200px); flex-shrink:0;}
+.is-mobile .hn-modal button {min-height:44px;}
+.is-mobile .hn-modal .hn-actions {position:sticky; bottom:0; margin-top:8px; padding:8px 0; background:var(--background-primary); flex-shrink:0;}
+.is-mobile .hn-modal .hn-preview {max-height:140px; flex-shrink:0;}
+.is-mobile .hn-mark,.is-mobile .hn-highlight {-webkit-user-select:text; user-select:text; -webkit-touch-callout:default;}
+.hn-sidebar-mobile .hn-landscape-filters {display:none;}
+@media (max-height:500px) {
+  .hn-sidebar-mobile {gap:4px; padding-top:6px; padding-bottom:6px;}
+  .hn-sidebar-mobile .hn-landscape-filters {display:inline-flex;}
+  .hn-sidebar-mobile:not(.hn-filters-open) .hn-search-row,
+  .hn-sidebar-mobile:not(.hn-filters-open) .hn-filters {display:none;}
+  .hn-sidebar-mobile .hn-thread-list {padding-bottom:8px;}
+}

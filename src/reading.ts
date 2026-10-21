@@ -54,13 +54,6 @@ export class ReadingComments extends MarkdownRenderChild {
   onload(): void {
     this.plugin.readingViews.add(this);
     this.plugin.registerInteractionDocument(this.containerEl.ownerDocument);
-    this.registerDomEvent(this.containerEl.ownerDocument, 'pointerup', () => this.scheduleSelection());
-    this.registerDomEvent(this.containerEl.ownerDocument, 'selectionchange', () => {
-      if (this.refreshDeferred && this.containerEl.ownerDocument.getSelection()?.isCollapsed) {
-        this.refreshDeferred = false;
-        this.plugin.run(() => this.refresh());
-      }
-    });
     this.registerDomEvent(this.containerEl, 'keyup', event => {
       if (event.key === 'Escape') { this.cancelSelection(); this.plugin.selectionToolbar.hide(this); }
       else if (event.key !== 'Tab') this.scheduleSelection();
@@ -186,7 +179,10 @@ export class ReadingComments extends MarkdownRenderChild {
       this.showSelectionAction();
     });
   }
-  private showSelectionAction(): void {
+  flushDeferredRefresh(): void {
+    if (this.refreshDeferred) { this.refreshDeferred = false; this.plugin.run(() => this.refresh()); }
+  }
+  showSelectionAction(): void {
     if (this.disposed || this.plugin.openModals.size || !this.containerEl.isConnected || !this.plugin.canModify || !this.plugin.isReadingContainer(this.containerEl)) return;
     const selection = this.containerEl.ownerDocument.getSelection();
     if (!selection || selection.isCollapsed || !selection.rangeCount) return;
@@ -206,6 +202,7 @@ export class ReadingComments extends MarkdownRenderChild {
     // still be pending (or may already contain a newer file revision).
     const source = section.text;
     this.plugin.selectionToolbar.show({owner: this, document: this.containerEl.ownerDocument, anchor,
+      touch: this.plugin.isMobile,
       boundary: (this.containerEl.closest('.markdown-preview-view') ?? this.containerEl).getBoundingClientRect(),
       valid: () => {
         const current = this.containerEl.ownerDocument.getSelection();

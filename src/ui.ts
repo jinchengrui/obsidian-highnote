@@ -29,29 +29,40 @@ function formatInput(field: HTMLTextAreaElement, style: 'bold' | 'bullet' | 'ord
 export class MessageModal extends Modal {
   private textarea!: HTMLTextAreaElement;
   private busy = false;
+  private composing = false;
+  private releaseViewport?: () => void;
   constructor(app: App, private title: string, private initial: string, private save: (body: string) => Promise<void>,
-    private report: (error: unknown) => void, private draft?: (body: string) => void) { super(app); }
+    private report: (error: unknown) => void, private draft?: (body: string) => void, private submitLabel = '保存') { super(app); }
   onOpen(): void {
     this.setTitle(this.title);
     this.contentEl.addClass('hn-modal');
+    this.modalEl.addClass('hn-message-modal');
+    const win = this.contentEl.ownerDocument.defaultView;
+    if (win?.visualViewport) {
+      const viewport = win.visualViewport;
+      const resize = () => this.modalEl.style.setProperty('--hn-visible-height', `${viewport.height}px`);
+      viewport.addEventListener('resize', resize); resize();
+      this.releaseViewport = () => viewport.removeEventListener('resize', resize);
+    }
     const toolbar = this.contentEl.createDiv({cls: 'hn-format-toolbar'});
     this.textarea = this.contentEl.createEl('textarea', {attr: {'aria-label': '评论内容', rows: '8', placeholder: '写下评论…'}});
     this.textarea.value = this.initial;
     for (const [label, style] of [['加粗', 'bold'], ['无序列表', 'bullet'], ['有序列表', 'ordered']] as const) {
       const button = toolbar.createEl('button', {text: label, attr: {type: 'button'}});
+      button.addEventListener('pointerdown', event => event.preventDefault());
       button.addEventListener('click', () => this.format(style));
     }
-    this.contentEl.createEl('p', {text: '支持 **加粗**、- 无序列表和 1. 有序列表。Ctrl/Cmd + Enter 保存。', cls: 'hn-muted'});
+    this.contentEl.createEl('p', {text: `支持加粗、有序列表和无序列表。完成后点击“${this.submitLabel}”。`, cls: 'hn-muted'});
     const preview = this.contentEl.createDiv({cls: 'hn-preview hn-message-body'});
-    const updatePreview = () => { preview.empty(); renderMessage(preview, this.textarea.value); this.draft?.(this.textarea.value); };
+    const updatePreview = () => { preview.empty(); renderMessage(preview, this.textarea.value); preview.hidden = !this.textarea.value.trim(); this.draft?.(this.textarea.value); };
     this.textarea.addEventListener('input', updatePreview);
     updatePreview();
     const actions = this.contentEl.createDiv({cls: 'hn-actions'});
     const cancel = actions.createEl('button', {text: '取消', attr: {type: 'button'}});
     cancel.addEventListener('click', () => { if (!this.busy) this.close(); });
-    const submit = actions.createEl('button', {text: '保存', cls: 'mod-cta', attr: {type: 'button'}});
+    const submit = actions.createEl('button', {text: this.submitLabel, cls: 'mod-cta', attr: {type: 'button'}});
     const save = async () => {
-      if (this.busy) return;
+      if (this.busy || this.composing) return;
       try {
         const body = checkBody(this.textarea.value);
         this.busy = true;
@@ -59,11 +70,14 @@ export class MessageModal extends Modal {
         this.textarea.disabled = true;
         await this.save(body);
         this.draft?.('');
+        this.textarea.value = '';
         this.close();
       } catch (error) { this.report(error); }
       finally { this.busy = false; submit.disabled = false; this.textarea.disabled = false; }
     };
     submit.addEventListener('click', () => { void save(); });
+    this.textarea.addEventListener('compositionstart', () => { this.composing = true; });
+    this.textarea.addEventListener('compositionend', () => { this.composing = false; });
     this.textarea.addEventListener('keydown', event => {
       if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.isComposing) { event.preventDefault(); void save(); }
     });
@@ -72,7 +86,7 @@ export class MessageModal extends Modal {
   private format(style: 'bold' | 'bullet' | 'ordered'): void {
     formatInput(this.textarea, style);
   }
-  onClose(): void { this.contentEl.empty(); }
+  onClose(): void { this.releaseViewport?.(); this.draft?.(this.textarea?.value ?? this.initial); this.contentEl.empty(); }
 }
 
 export class ConfirmModal extends Modal {
@@ -123,6 +137,7 @@ export class CommentsView extends ItemView {
   private visibleThreads: string[] = [];
   private pendingRender = false;
   private openedMenus = new Set<Menu>();
+  private menuVersion = -1;
   private expandedOverview = '';
   private expandedQuotes = new Set<string>();
   private expandedPaths = new Set<string>();
@@ -136,9 +151,21 @@ export class CommentsView extends ItemView {
     this.tabs.clear();
     this.searchComposing = false;
     this.contentEl.addClass('hn-sidebar');
+    this.contentEl.toggleClass('hn-sidebar-mobile', this.plugin.isMobile);
     const header = this.contentEl.createDiv({cls: 'hn-header'});
     header.createEl('h3', {text: '正文标注'});
     const headerActions = header.createDiv({cls: 'hn-header-actions'});
+    if (this.plugin.isMobile) {
+      const back = this.iconButton(headerActions, '返回阅读', 'book-open', 'hn-return-reading');
+      back.addEventListener('click', () => this.plugin.run(() => this.plugin.returnToReading()));
+      const filters = this.iconButton(headerActions, '展开或收起筛选', 'list-filter', 'hn-landscape-filters');
+      filters.setAttribute('aria-expanded', 'false');
+      filters.addEventListener('click', () => {
+        const expanded = !this.contentEl.hasClass('hn-filters-open');
+        this.contentEl.toggleClass('hn-filters-open', expanded);
+        filters.setAttribute('aria-expanded', String(expanded));
+      });
+    }
     const scope = headerActions.createEl('select', {cls: 'hn-scope', attr: {'aria-label': '文档范围'}});
     scope.createEl('option', {text: '当前文档', value: 'current'});
     scope.createEl('option', {text: '全部文档', value: 'all'});
@@ -276,6 +303,9 @@ export class CommentsView extends ItemView {
   }
   render(): void {
     if (!this.list || !this.plugin.store) return;
+    // Mobile focus/layout events can fire while the native menu animates in.
+    // Keep it open unless records or the permission to edit actually changed.
+    if (this.plugin.isMobile && this.openedMenus.size && this.menuVersion === this.plugin.store.version && this.plugin.canModify) return;
     this.syncControls();
     if (this.plugin.canModify && this.paneKind === 'comments' && [...this.replies.values()].some(state => state.composing)) { this.pendingRender = true; return; }
     if (!this.plugin.canModify) for (const state of this.replies.values()) state.composing = false;
@@ -504,6 +534,7 @@ export class CommentsView extends ItemView {
       this.closeMenus();
       const menu = new Menu();
       build(menu);
+      this.menuVersion = this.plugin.store.version;
       this.openedMenus.add(menu);
       button.setAttribute('aria-expanded', 'true');
       menu.onHide(() => { this.openedMenus.delete(menu); button.setAttribute('aria-expanded', 'false'); });
@@ -624,7 +655,8 @@ export class CommentsView extends ItemView {
     if (reply) this.replyState(id).expanded = true;
     this.render();
     const card = this.list.querySelector<HTMLElement>(`[data-thread-id="${id}"]`);
-    card?.querySelector<HTMLElement>(reply ? '.hn-inline-reply-input' : '.hn-overview-collapse')?.focus({preventScroll: true});
+    if (reply && this.plugin.isMobile) card?.querySelector<HTMLButtonElement>('.hn-mobile-reply')?.click();
+    else card?.querySelector<HTMLElement>(reply ? '.hn-inline-reply-input' : '.hn-overview-collapse')?.focus({preventScroll: true});
   }
   private card(thread: Readonly<Thread>): void {
     const card = this.list.createDiv({cls: `hn-card${thread.resolved ? ' hn-card-resolved' : ''}${this.plugin.focused === thread.id ? ' hn-card-active' : ''}`});
@@ -756,6 +788,29 @@ export class CommentsView extends ItemView {
       card.createDiv({cls: 'hn-inline-reply-space', attr: {'aria-hidden': 'true'}});
       return;
     }
+    if (this.plugin.isMobile) {
+      const reply = card.createEl('button', {cls: 'hn-mobile-reply',
+        text: this.plugin.drafts.has(key) ? '继续回复…' : '回复…', attr: {type: 'button', 'aria-label': '回复评论'}});
+      reply.addEventListener('click', () => this.plugin.run(async () => {
+        this.requireModification();
+        if (this.plugin.openModals.size) return;
+        this.plugin.openModal(new MessageModal(this.app, '回复评论', this.plugin.drafts.get(key) ?? '', async body => {
+          const messageId = crypto.randomUUID();
+          await this.plugin.store.update(thread.id, current => {
+            this.requireModification();
+            const now = new Date().toISOString();
+            current.messages.push({id: messageId, body: checkBody(body), deleted: false, createdAt: now, updatedAt: now});
+          });
+          const current = this.plugin.store.get(thread.id);
+          if (current) this.messageBatches.reveal(current, messageId);
+          this.plugin.drafts.delete(key); this.render();
+        }, error => this.plugin.report(error), body => {
+          if (body) this.plugin.drafts.set(key, body); else this.plugin.drafts.delete(key);
+          reply.setText(body ? '继续回复…' : '回复…');
+        }, '发送'));
+      }));
+      return;
+    }
     const composer = card.createDiv({cls: `hn-inline-reply${state.expanded ? ' is-expanded' : ''}`});
     const textarea = composer.createEl('textarea', {cls: 'hn-inline-reply-input', attr: {
       rows: state.expanded ? '3' : '1', placeholder: '回复…', 'aria-label': '回复内容', 'data-thread-id': thread.id
@@ -785,7 +840,7 @@ export class CommentsView extends ItemView {
     for (const [label, style, icon] of [['加粗', 'bold', 'bold'], ['无序列表', 'bullet', 'list'], ['有序列表', 'ordered', 'list-ordered']] as const) {
       const button = this.iconButton(toolbar, label, icon);
       button.disabled = state.busy;
-      button.addEventListener('mousedown', event => event.preventDefault());
+      button.addEventListener('pointerdown', event => event.preventDefault());
       button.addEventListener('click', () => { if (this.plugin.canModify && !state.busy) formatInput(textarea, style); });
     }
     textarea.addEventListener('focus', expand);
@@ -834,7 +889,7 @@ export class CommentsView extends ItemView {
     submit.addEventListener('click', () => { void send(); });
     textarea.addEventListener('keydown', event => {
       if (event.isComposing || state.composing) return;
-      if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); }
+      if (event.key === 'Enter' && !event.shiftKey && (!this.plugin.isMobile || event.ctrlKey || event.metaKey)) { event.preventDefault(); void send(); }
       else if (event.key === 'Escape' && !state.busy) {
         event.preventDefault(); textarea.blur(); state.expanded = Boolean(textarea.value); this.render(); this.plugin.clearFocus();
       }

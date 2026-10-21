@@ -61,7 +61,7 @@ export class ReviewView extends ItemView {
   private composing = false;
   private renameEvent: EventRef | null = null;
   private messagePages = new Map<string, number>();
-  constructor(leaf: WorkspaceLeaf, private plugin: HighnotePlugin) { super(leaf); this.calendarOpen = !plugin.isMobileReview; }
+  constructor(leaf: WorkspaceLeaf, private plugin: HighnotePlugin) { super(leaf); this.calendarOpen = !plugin.isMobile; }
   getViewType(): string { return REVIEW_VIEW; }
   getDisplayText(): string { return '阅读回顾'; }
   getIcon(): string { return 'book-open'; }
@@ -75,7 +75,7 @@ export class ReviewView extends ItemView {
       this.kind = s.kind === 'highlights' ? 'highlights' : 'comments'; this.viewScope = s.scope === 'current' ? 'current' : 'all';
       this.sourcePath = typeof s.sourcePath === 'string' ? s.sourcePath : '';
       this.query = typeof s.query === 'string' ? s.query : ''; this.includeReplies = s.includeReplies !== false;
-      this.calendarOpen = typeof s.calendarOpen === 'boolean' ? s.calendarOpen : !this.plugin.isMobileReview;
+      this.calendarOpen = typeof s.calendarOpen === 'boolean' ? s.calendarOpen : !this.plugin.isMobile;
       this.heatEndWeek = typeof s.heatEndWeek === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(s.heatEndWeek)
         && Number.isFinite(Date.parse(s.heatEndWeek + 'T12:00:00Z')) ? monday(s.heatEndWeek) : '';
       this.selectedDay = typeof s.selectedDay === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(s.selectedDay) ? s.selectedDay : '';
@@ -87,10 +87,10 @@ export class ReviewView extends ItemView {
   }
   onOpen(): Promise<void> {
     this.contentEl.empty(); this.contentEl.addClass('hn-review');
-    this.contentEl.toggleClass('hn-review-mobile', this.plugin.isMobileReview);
+    this.contentEl.toggleClass('hn-review-mobile', this.plugin.isMobile);
     const page = this.contentEl.createDiv({cls: 'hn-review-page'}), head = page.createDiv({cls: 'hn-review-heading'});
     const title = head.createDiv(); title.createEl('h1', {text: '阅读回顾'});
-    title.createEl('p', {cls: 'hn-review-description', text: this.plugin.isMobileReview ? '查看已保存的想法，评论与标记请在桌面端操作。' : '读回原文，也读懂当时的想法。'});
+    title.createEl('p', {cls: 'hn-review-description', text: this.plugin.isMobile ? '回顾已保存的想法，回到原文继续评论与标记。' : '读回原文，也读懂当时的想法。'});
     const actions = head.createDiv({cls: 'hn-review-heading-actions'});
     this.scopeSelect = actions.createEl('select', {attr: {'aria-label': '回顾文档范围'}});
     this.scopeSelect.createEl('option', {value: 'all', text: '全部文档'});
@@ -105,12 +105,12 @@ export class ReviewView extends ItemView {
     this.exportButton.addEventListener('click', () => {
       this.commitSearch(); this.plugin.openReviewExport(this.kind, this.query, this.includeReplies, this.exportButton, this.viewScope, this.sourcePath);
     });
-    if (this.plugin.isMobileReview) {
+    if (this.plugin.isMobile) {
       const refresh = actions.createEl('button', {text: '刷新', attr: {type: 'button', 'aria-label': '刷新阅读回顾'}});
       refresh.addEventListener('click', () => this.plugin.run(async () => {
         if (refresh.disabled) return;
         refresh.disabled = true;
-        try { await this.plugin.refreshMobileReview(true); this.refresh(true); }
+        try { await this.plugin.refreshMobileData(true); this.refresh(true); }
         finally { refresh.disabled = false; }
       }));
     }
@@ -227,7 +227,7 @@ export class ReviewView extends ItemView {
     const win = this.contentEl.win as Window & {ResizeObserver: typeof ResizeObserver};
     const observer = new win.ResizeObserver(entries => {
       const width = entries[0]?.contentRect.width ?? 0;
-      const weeks = heatmapWeeks(width, this.plugin.isMobileReview ? 32 : 22);
+      const weeks = heatmapWeeks(width, this.plugin.isMobile ? 32 : 22);
       if (!this.calendarOpen || weeks === null || this.heatFrame !== null) return;
       this.heatFrame = this.contentEl.win.requestAnimationFrame(() => {
         this.heatFrame = null;
@@ -258,7 +258,7 @@ export class ReviewView extends ItemView {
     this.heatSparse.disabled = !latest; this.heatSparse.dataset.day = latest;
     this.heatSparse.setText(latest ? `最近记录 · ${latest}` : '暂无记录');
     if (!this.calendarOpen) return;
-    const weeks = heatmapWeeks(this.heatGrid.getBoundingClientRect().width, this.plugin.isMobileReview ? 32 : 22);
+    const weeks = heatmapWeeks(this.heatGrid.getBoundingClientRect().width, this.plugin.isMobile ? 32 : 22);
     // Hidden leaves report zero: retain the last useful width and wait for visibility.
     if (weeks === null) return;
     this.heatWeeks = weeks;
@@ -309,8 +309,8 @@ export class ReviewView extends ItemView {
     this.feed.empty();
     if (this.selectedDay) { const clear = this.feed.createEl('button', {cls: 'hn-review-clear-date', text: '清除日期 ×', attr: {type: 'button'}}); clear.addEventListener('click', () => { this.selectedDay = ''; this.page = 0; this.refresh(true); this.persist(); }); }
     for (const group of this.groups.slice(this.page * PAGE_SIZE, (this.page + 1) * PAGE_SIZE)) this.card(group);
-    if (!this.groups.length) this.feed.createDiv({cls: 'hn-review-empty', text: this.plugin.isMobileReview && !this.sourceEntries.length
-      ? `当前设备还没有此类批注。请先将 ${this.plugin.dataFolder}/ 同步到本机，再点“刷新”。`
+    if (!this.groups.length) this.feed.createDiv({cls: 'hn-review-empty', text: this.plugin.isMobile && !this.sourceEntries.length
+      ? `还没有此类批注。可在笔记阅读模式下长按选中文字添加；已有批注请将 ${this.plugin.dataFolder}/ 同步到本机，再点“刷新”。`
       : '没有匹配的内容，可清除日期或换一个关键词。'});
     if (this.groups.length > PAGE_SIZE) {
       const nav = this.feed.createDiv({cls: 'hn-review-pagination'}), previous = nav.createEl('button', {text: '较新内容'}); previous.disabled = this.page === 0;
@@ -376,7 +376,7 @@ class ReviewDetailsModal extends Modal {
         const current = this.group.entries[0];
         if (current) {
           await this.plugin.openReviewSource(current, this.origin);
-          if (!this.plugin.isMobileReview && this.group.threadId && !this.group.fileMissing) await this.plugin.showThread(this.group.threadId);
+          if (this.group.threadId && !this.group.fileMissing) await this.plugin.showThread(this.group.threadId);
         }
         this.close();
       }));
@@ -397,8 +397,8 @@ class ReviewDetailsModal extends Modal {
   private renderSource(): void {
     this.sourceName.setText(this.group.filePath.split('/').at(-1) ?? this.group.filePath);
     this.sourcePath.setText(this.group.filePath);
-    const missing = this.plugin.isMobileReview ? !this.app.vault.getFileByPath(this.group.filePath) : this.group.fileMissing;
-    this.sourceStatus.setText(missing ? this.plugin.isMobileReview ? '当前设备尚未找到原文件' : '原文件已删除'
+    const missing = this.plugin.isMobile ? !this.app.vault.getFileByPath(this.group.filePath) : this.group.fileMissing;
+    this.sourceStatus.setText(missing ? this.plugin.isMobile ? '当前设备尚未找到原文件' : '原文件已删除'
       : this.group.detached ? '原文位置失效，仍可打开原文件' : '已关联原文');
     this.sourceResolved?.setText(this.group.resolved ? '已解决' : '未解决');
     for (const button of this.sourceButtons) button.disabled = missing;

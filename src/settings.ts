@@ -45,8 +45,8 @@ export class AnnotationSettingsTab extends PluginSettingTab {
         setting.addButton(button => button.setButtonText('应用').setCta().onClick(() => { void apply(); }));
         setting.addButton(button => button.setButtonText('恢复默认').onClick(() => { value = DATA_FOLDER; void apply(); }));
       }};
-    if (this.annotationPlugin.isMobileReview) return [directory, {name: '手机版阅读回顾',
-      desc: '支持查看、搜索和按日期回顾已有批注。评论与标记请在桌面端操作；将上面设置的目录同步到手机后，在回顾页点“刷新”。'}];
+    const mobile: SettingDefinitionItem = {name: '手机与平板批注',
+      desc: '在 Markdown 阅读模式下长按选中文字，再点底部“评论”或“标记”。点原文下划线或高亮查看批注；编辑模式下仅可查看。电脑和手机需同步同一个批注目录。'};
     const migration: SettingDefinitionItem = {name: '迁移批注数据',
       desc: '将源目录内的批注复制到目标目录，成功后自动切换。支持读取源目录下的 annotations 子目录；源文件保留为备份，同名不同内容不会覆盖。',
       render: setting => {
@@ -91,7 +91,7 @@ export class AnnotationSettingsTab extends PluginSettingTab {
         setting.addButton(button => button.setButtonText(this.migrationBusy ? '正在迁移…' : '迁移').setCta().onClick(() => { void migrate(); }));
         controls();
       }};
-    return [directory, migration, {name: '标记颜色', desc: '所有标记共用此颜色，选择后立即更新。', render: setting => {
+    return [directory, this.annotationPlugin.isMobile ? mobile : migration, {name: '标记颜色', desc: '所有标记共用此颜色，选择后立即更新。', render: setting => {
       setting.settingEl.addClass('hn-color-setting');
       const colors = setting.controlEl.createDiv({cls: 'hn-color-palette', attr: {role: 'group', 'aria-label': '预设标记颜色'}});
       const buttons: HTMLButtonElement[] = [];

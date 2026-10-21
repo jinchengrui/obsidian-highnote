@@ -6,7 +6,7 @@ Highnote brings compact comments and highlights to Markdown reading in Obsidian,
 
 [Community page](https://community.obsidian.md/plugins/highnote) · [Download a release](https://github.com/jinchengrui/obsidian-highnote/releases) · [中文说明](#中文说明)
 
-**Obsidian 1.14.4+ · Desktop annotations · Mobile reading review · Chinese interface · Free and open source**
+**Obsidian 1.14.4+ · Desktop, phone and tablet annotations · Chinese interface · Free and open source**
 
 ![Highnote beside a Markdown note: full comments and replies, blue passage focus, and yellow highlights](docs/screenshots/showcase-comments.png)
 
@@ -26,7 +26,7 @@ The sidebar follows Obsidian's light and dark themes. Highlights use one shared 
 
 Open **阅读回顾** (Reading review) from the sidebar menu to bring annotations from across your vault into one workspace.
 
-On mobile, use the book icon or the **Highnote: 打开阅读回顾** command. Browse saved comments, replies and highlights, search, filter by date, and open source notes. Annotation creation, editing, replies, deletion, resolution and inline decorations remain desktop-only. The mobile calendar starts collapsed, and touch controls use larger targets.
+On phones and tablets, long-press text in Reading view and tap **评论** (Comment) or **标记** (Highlight) in the bottom annotation toolbar. Tap an underline or highlight to open its annotation drawer, where you can reply, edit, delete or resolve discussions. Use the book icon or **Highnote: 打开阅读回顾** to browse saved annotations. The mobile calendar starts collapsed; touch controls and the composer adapt to the available screen and keyboard space.
 
 ![Reading review dashboard with a date heatmap, search, and cards showing original excerpts followed by comments](docs/screenshots/showcase-review.png)
 
@@ -79,15 +79,15 @@ Download `main.js`, `manifest.json`, and `styles.css` from the same [GitHub rele
 
 ## Your notes and your data
 
-Annotations use **`Highnote/annotations/`** by default, with one JSON file per annotated note path. Change **批注数据目录** (Annotation data directory) in **Settings → Highnote** to any vault-relative directory, such as `Highnote/annotations`, and click **应用** (Apply). Enter the complete data directory; another `annotations` folder is not appended. Desktop and mobile should use the same relative path. Highnote does not insert annotation markup into your Markdown source. Include the selected directory in backups or sync; copying a `.md` file alone does not copy its annotations. Exports are reading copies, not a replacement for the JSON backup.
+Annotations use **`Highnote/annotations/`** by default, with one JSON file per annotated note path. Change **批注数据目录** (Annotation data directory) in **Settings → Highnote** to any vault-relative directory, such as `Highnote/annotations`, and click **应用** (Apply). Enter the complete data directory; another `annotations` folder is not appended. Desktop, phone and tablet should use the same relative path. Highnote does not insert annotation markup into your Markdown source. Include the selected directory in backups or sync; copying a `.md` file alone does not copy its annotations. Exports are reading copies, not a replacement for the JSON backup.
 
 **For Obsidian Sync**, set the data directory to `Highnote/annotations` on both devices, enable **Sync all other types** in Sync settings, and ensure `Highnote` is not excluded. [Obsidian Sync excludes ordinary hidden folders](https://help.obsidian.md/sync/settings), so users of the old `.obsidian-highnote/` directory should migrate it using the desktop settings below. After syncing, tap **刷新** (Refresh) in mobile Reading review.
 
 **Migrating an existing directory (desktop):** Open **Settings → Highnote → 迁移批注数据** (Migrate annotation data). The source defaults to `.obsidian-highnote` and the destination is prefilled with `Highnote/annotations`; review or change the destination and click **迁移** (Migrate). Highnote reads note JSON files from the source and its `annotations` subfolder, validates and copies them, then switches to the destination automatically. Source files remain as a backup. Identical files are skipped; conflicting or invalid files stop migration without overwriting them. If copying is interrupted, the current directory stays unchanged and you can retry. Existing explicit directory settings are retained when upgrading. Match the new directory on your mobile device after migration. Exports and Markdown source files are not moved.
 
-The Apply button only selects where Highnote reads and saves annotations. Use Migrate annotation data when you also want to copy your existing annotations. An absent directory is created when a desktop annotation is first saved; mobile only reads it. Invalid paths, occupied parent folders and malformed annotation files prevent switching. Export files continue to use the vault root.
+The Apply button only selects where Highnote reads and saves annotations. Use Migrate annotation data when you also want to copy your existing annotations. An absent directory is created when an annotation is first saved. Invalid paths, occupied parent folders and malformed annotation files prevent switching. Export files continue to use the vault root.
 
-Mobile reads annotation JSON without rewriting it, including when a source note has not yet synced or is edited on the phone. It refreshes when review opens or the app returns to the foreground, and checks file metadata every 15 seconds while review is active. Unchanged files and parsed records are reused. Refresh forces a full reread when a sync tool preserves timestamps.
+Mobile supports comments, replies and highlights in Markdown Reading view. Long-press a passage, adjust the selection, then tap Comment or Highlight in the bottom annotation toolbar. Tap an existing underline or highlight to open the annotation drawer. Edit, delete and resolve actions are visible without hover; Tap Reply to open a composer; Enter inserts a newline and Send submits it. In short landscape viewports, search and filters are available through the filter button. Phone and tablet layouts adapt to the available pane width, orientation and keyboard. Unchanged JSON files and parsed records are cached, and active annotation/review views check for external changes every 15 seconds. Missing source notes on a partially synced device are not marked as deleted. Conflicting saves stop rather than overwrite newer data; the draft is retained.
 
 | When this happens | Highnote's behavior |
 | --- | --- |
@@ -117,7 +117,7 @@ The review and sidebar render records in batches, and long discussions have mess
 
 Highnote 为 Obsidian 的 Markdown 阅读提供简洁的批注侧栏、按日期回顾的看板，以及适合导入 flomo 的 CSV 导出。评论和标记保存在笔记库中，不写进 Markdown 正文。
 
-适用于 **Obsidian 1.14.4 及以上**。桌面版支持评论与标记，手机版支持阅读回顾；当前界面为中文。免费，使用 MIT 许可。
+适用于 **Obsidian 1.14.4 及以上**。电脑、手机和平板均支持评论、标记和阅读回顾；当前界面为中文。免费，使用 MIT 许可。
 
 ### 简洁批注，把空间留给内容
 
@@ -151,15 +151,17 @@ Highnote 为 Obsidian 的 Markdown 阅读提供简洁的批注侧栏、按日期
 2. 打开 Markdown 笔记并切换到**阅读模式**，选中文字添加评论或标记。
 3. 从侧栏菜单进入“阅读回顾”，集中查看记录，或在右上角选择导出。
 
-手机版从书本图标或“Highnote：打开阅读回顾”命令进入。可以查看原文摘录、评论及回复全文、已有标记，搜索、按日期筛选、查看出处并打开原文件。热力图默认收起，触控按钮加大。手机端不提供评论侧栏、选区浮层、正文标注，也不能新增、回复、编辑、删除或解决讨论。支持导出 Markdown、HTML 和 flomo CSV；HTML 与 CSV 只保存文件。
+手机和平板在 Markdown **阅读模式**下，长按选中文字并调整范围，点击底部的“评论”或“标记”。点击已有原文下划线或高亮可打开批注抽屉，查看全文、回复、编辑、删除、解决或重新打开讨论。点击“回复”打开独立输入弹窗，按回车换行，点击“发送”提交；标记完成后停留在正文。“返回阅读”可收起抽屉。编辑模式下仅可查看批注。
+
+界面按可用宽度适配大屏手机、iPad 横竖屏及分屏，主要触控按钮至少 44 像素，输入字号 16 像素，评论与回复弹窗随键盘可视区域调整。手机横屏高度较小时，搜索与筛选收进顶部筛选按钮，给评论列表留出空间。从书本图标或“Highnote：打开阅读回顾”命令进入回顾页，支持搜索、日期筛选和 Markdown、HTML、flomo CSV 导出。
 
 **使用 Obsidian Sync 时**，在电脑和手机的“设置 → Highnote → 批注数据目录”都填 `Highnote/annotations`，点击“应用”。两端分别开启“同步所有其他类型”，确认 `Highnote` 不在排除目录中，重启应用后等待同步，再点手机回顾页“刷新”。[Obsidian Sync 不同步普通隐藏目录](https://help.obsidian.md/sync/settings)，使用旧 `.obsidian-highnote` 目录的用户，请先在桌面端按下方说明迁移。
 
 **迁移历史批注（桌面端）：** 打开“设置 → Highnote → 迁移批注数据”，源目录默认 `.obsidian-highnote`，目标目录已预填 `Highnote/annotations`，确认或修改后点击“迁移”。插件会识别源目录及其 `annotations` 子目录中的批注 JSON，校验复制后自动切换。源文件保留为备份；相同文件跳过，遇到冲突或损坏则停止，不覆盖。中断时当前目录不变，已复制文件可供重试复用。升级保留明确配置过的目录，未配置时采用新默认；手机同步后应使用同一个新目录。迁移不搬动正文或导出文件。
 
-配置填写完整的笔记库内相对目录，不会自动再追加 `annotations`。“应用”只切换读写位置；需要同时搬移已有批注时，请使用“迁移批注数据”。不存在的目录在桌面端首次保存批注时创建，手机端只读取。路径无效、同名文件占用目录或目标批注文件损坏时不切换。导出文件继续存笔记库根目录。
+配置填写完整的笔记库内相对目录，不会自动再追加 `annotations`。“应用”只切换读写位置；需要同时搬移已有批注时，请使用“迁移批注数据”。不存在的目录在首次保存批注时创建。路径无效、同名文件占用目录或目标批注文件损坏时不切换。导出文件继续存笔记库根目录。
 
-手机端只读批注 JSON；原笔记尚未同步、在手机上修改或删除，都不会改写批注文件。打开回顾或切回应用时重新读取；回顾页处于前台时每 15 秒检查文件信息，复用没有变化的数据。手动刷新会重新读取全文，适用于同步工具保留文件时间的情况。
+手机端与电脑使用相同的批注 JSON，通过原子校验保存修改；遇到同步冲突时停止保存并保留输入草稿。原笔记尚未同步或暂时不可用时，不将批注标为已删除。阅读或批注界面处于前台时每 15 秒检查文件信息，复用未变化的数据；手动刷新会重新读取全文。
 
 非阅读模式可以查看批注，不能新增、回复、编辑、删除或解决讨论。没有账号、多人协作、提及或提醒功能，适合个人阅读和写作。
 

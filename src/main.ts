@@ -6,7 +6,7 @@ import { mapAnchor, makeAnchor, relocateAnchor } from './anchors';
 import { DATA_FOLDER, type Anchor, type Thread, type Highlight } from './model';
 import { ThreadStore, type ThreadFiles } from './store';
 import {NoteFiles} from './note-files';
-import {ReviewFiles} from './review-files';
+import {CachedNoteFiles} from './review-files';
 import {annotationDirectory, savedDataDirectory} from './data-directory';
 import {migrateAnnotations, type MigrationProgress, type MigrationResult} from './data-migration';
 import { COMMENTS_VIEW, CommentsView, MessageModal } from './ui';
@@ -55,13 +55,14 @@ export default class HighnotePlugin extends Plugin {
   private reconciliations = new Map<string, Promise<void>>();
   exporting = false;
   private interactionDocuments = new Map<Document, Component>();
-  private reviewFiles: ReviewFiles | null = null;
+  private mobileFiles: CachedNoteFiles | null = null;
   private activeDataDirectory = DATA_FOLDER;
   private changingDataDirectory = false;
   private dataWritesPaused = false;
   private dataWatcherGeneration = 0;
+  private annotationSource: MarkdownView | null = null;
   get dataFolder(): string { return this.activeDataDirectory; }
-  get isMobileReview(): boolean { return Platform.isMobile; }
+  get isMobile(): boolean { return Platform.isMobile; }
 
   async onload(): Promise<void> {
     const saved: unknown = await this.loadData();
@@ -74,61 +75,60 @@ export default class HighnotePlugin extends Plugin {
     this.addSettingTab(new AnnotationSettingsTab(this.app, this));
     this.store = new ThreadStore(this.fileAccess(), () => this.scheduleRefresh(), error => this.report(error));
     this.register(() => this.closeDataWatcher());
-    if (!this.isMobileReview) {
-      this.registerInteractionDocument(this.app.workspace.containerEl.ownerDocument);
-      this.registerEvent(this.app.workspace.on('window-open', (_workspaceWindow, win) => this.registerInteractionDocument(win.document)));
-      this.registerEvent(this.app.workspace.on('window-close', (_workspaceWindow, win) => {
-        const component = this.interactionDocuments.get(win.document);
-        if (component) { this.removeChild(component); this.interactionDocuments.delete(win.document); }
-      }));
-      this.registerView(COMMENTS_VIEW, leaf => new CommentsView(leaf, this));
-      this.registerEditorExtension(commentEditor(this));
-      this.registerMarkdownPostProcessor((element, context) => {
-        if (context.sourcePath.endsWith('.md')) context.addChild(new ReadingComments(element, context, this));
-      });
-      this.addRibbonIcon('messages-square', '打开评论', () => this.run(() => this.openSidebar()));
-      this.addCommand({id: 'open-comments', name: '打开评论', callback: () => this.run(() => this.openSidebar())});
-      for (const [id, name, kind] of [['add-comment', '评论所选文字', 'comment'], ['add-highlight', '标记所选文字', 'highlight']] as const) {
-        this.addCommand({id, name, checkCallback: checking => {
-          if (!this.canModify) return false;
-          const view = this.currentMarkdownView();
-          const reading = [...this.readingViews].find(render => view?.contentEl.contains(render.containerEl) && render.hasSelection());
-          if (!reading) return false;
-          if (!checking) reading.performSelection(kind);
-          return true;
-        }});
-      }
-      this.addCommand({id: 'refresh-comments', name: '重新读取评论数据', callback: () => this.run(() => this.refreshData())});
-      this.addCommand({id: 'export-current-comments', name: '导出当前文档评论', checkCallback: checking => {
-        const available = this.canModify && !this.exporting && Boolean(this.activePath && this.store.viewFile(this.activePath).length);
-        if (available && !checking) this.openExport('current','comments');
+    this.registerInteractionDocument(this.app.workspace.containerEl.ownerDocument);
+    this.registerEvent(this.app.workspace.on('window-open', (_workspaceWindow, win) => this.registerInteractionDocument(win.document)));
+    this.registerEvent(this.app.workspace.on('window-close', (_workspaceWindow, win) => {
+      const component = this.interactionDocuments.get(win.document);
+      if (component) { this.removeChild(component); this.interactionDocuments.delete(win.document); }
+    }));
+    this.registerView(COMMENTS_VIEW, leaf => new CommentsView(leaf, this));
+    this.registerEditorExtension(commentEditor(this));
+    this.registerMarkdownPostProcessor((element, context) => {
+      if (context.sourcePath.endsWith('.md')) context.addChild(new ReadingComments(element, context, this));
+    });
+    this.addRibbonIcon('messages-square', '打开评论', () => this.run(() => this.openSidebar()));
+    this.addCommand({id: 'open-comments', name: '打开评论', callback: () => this.run(() => this.openSidebar())});
+    for (const [id, name, kind] of [['add-comment', '评论所选文字', 'comment'], ['add-highlight', '标记所选文字', 'highlight']] as const) {
+      this.addCommand({id, name, checkCallback: checking => {
+        if (!this.canModify) return false;
+        const view = this.currentMarkdownView();
+        const reading = [...this.readingViews].find(render => view?.contentEl.contains(render.containerEl) && render.hasSelection());
+        if (!reading) return false;
+        if (!checking) reading.performSelection(kind);
+        return true;
+      }});
+    }
+    this.addCommand({id: 'refresh-comments', name: '重新读取评论数据', callback: () => this.run(() => this.refreshData())});
+    this.addCommand({id: 'export-current-comments', name: '导出当前文档评论', checkCallback: checking => {
+      const available = this.canModify && !this.exporting && Boolean(this.activePath && this.store.viewFile(this.activePath).length);
+      if (available && !checking) this.openExport('current','comments');
+      return available;
+    }});
+    this.addCommand({id: 'export-all-comments', name: '导出全部文档评论', checkCallback: checking => {
+      const available = this.canModify && !this.exporting && this.store.viewAll().length > 0;
+      if (available && !checking) this.openExport('all','comments');
+      return available;
+    }});
+    for (const [id, name, scope] of [['export-current-highlights', '导出当前文档标记', 'current'], ['export-all-highlights', '导出全部文档标记', 'all']] as const) {
+      this.addCommand({id, name, checkCallback: checking => {
+        const available = this.canModify && !this.exporting && this.store.viewHighlights(scope === 'current' ? this.activePath : undefined).length > 0;
+        if (available && !checking) this.openExport(scope,'highlights');
         return available;
       }});
-      this.addCommand({id: 'export-all-comments', name: '导出全部文档评论', checkCallback: checking => {
-        const available = this.canModify && !this.exporting && this.store.viewAll().length > 0;
-        if (available && !checking) this.openExport('all','comments');
-        return available;
-      }});
-      for (const [id, name, scope] of [['export-current-highlights', '导出当前文档标记', 'current'], ['export-all-highlights', '导出全部文档标记', 'all']] as const) {
-        this.addCommand({id, name, checkCallback: checking => {
-          const available = this.canModify && !this.exporting && this.store.viewHighlights(scope === 'current' ? this.activePath : undefined).length > 0;
-          if (available && !checking) this.openExport(scope,'highlights');
-          return available;
-        }});
-      }
     }
     this.registerView(REVIEW_VIEW, leaf => new ReviewView(leaf, this));
     this.addCommand({id: 'open-review', name: '打开阅读回顾', callback: () => this.run(() => this.openReview())});
-    if (this.isMobileReview) {
+    if (this.isMobile) {
       this.addRibbonIcon('book-open', '打开阅读回顾', () => this.run(() => this.openReview()));
-      this.addCommand({id: 'refresh-review', name: '刷新阅读回顾', callback: () => this.run(() => this.refreshMobileReview(true))});
+      this.addCommand({id: 'refresh-review', name: '刷新阅读回顾', callback: () => this.run(() => this.refreshMobileData(true))});
       const doc = this.app.workspace.containerEl.ownerDocument;
       this.registerDomEvent(doc, 'visibilitychange', () => {
-        if (!doc.hidden) this.run(() => this.refreshMobileReview(true));
+        if (!doc.hidden) this.run(() => this.refreshMobileData(true));
       });
-      if (doc.defaultView) this.registerDomEvent(doc.defaultView, 'focus', () => this.run(() => this.refreshMobileReview(true)));
+      if (doc.defaultView) this.registerDomEvent(doc.defaultView, 'focus', () => this.run(() => this.refreshMobileData(true)));
       this.registerInterval(window.setInterval(() => {
-        if (!doc.hidden && this.app.workspace.getActiveViewOfType(ReviewView)) this.run(() => this.refreshMobileReview());
+        if (!doc.hidden && (this.app.workspace.getActiveViewOfType(ReviewView) || this.currentMarkdownView()
+          || this.app.workspace.getActiveViewOfType(CommentsView))) this.run(() => this.refreshMobileData());
       }, 15000));
     }
     this.registerEvent(this.app.workspace.on('file-open', file => {
@@ -136,11 +136,12 @@ export default class HighnotePlugin extends Plugin {
       const activeFile = file ?? this.app.workspace.getActiveFile();
       this.activePath = activeFile?.extension === 'md' ? activeFile.path : '';
       this.scheduleRefresh();
-      if (!this.changingDataDirectory && !this.isMobileReview && file?.extension === 'md') this.run(() => this.reconcileFile(file));
+      const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if (view) this.annotationSource = view;
+      if (!this.changingDataDirectory && file?.extension === 'md') this.run(() => this.reconcileFile(file));
     }));
     this.registerEvent(this.app.vault.on('modify', file => {
       if (this.changingDataDirectory) return;
-      if (this.isMobileReview) { if (this.isDataFile(file.path)) this.externalChanged(); return; }
       if (this.isDataFile(file.path)) this.externalChanged();
       else if (file instanceof TFile && file.extension === 'md') {
         this.sourceVersions.set(file.path, (this.sourceVersions.get(file.path) ?? 0) + 1);
@@ -149,13 +150,11 @@ export default class HighnotePlugin extends Plugin {
     }));
     this.registerEvent(this.app.vault.on('create', file => {
       if (this.changingDataDirectory) return;
-      if (this.isMobileReview) { if (this.isDataFile(file.path)) this.externalChanged(); return; }
       if (this.isDataFile(file.path)) this.externalChanged();
       else if (file instanceof TFile && file.extension === 'md') this.run(() => this.reconcileFile(file));
     }));
     this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
       if (this.changingDataDirectory) return;
-      if (this.isMobileReview) { this.externalChanged(); return; }
       if (oldPath === this.dataFolder || this.dataFolder.startsWith(`${oldPath}/`) || oldPath.startsWith(`${this.dataFolder}/`) || this.isDataFile(file.path)) {
         this.externalChanged(); return;
       }
@@ -174,7 +173,7 @@ export default class HighnotePlugin extends Plugin {
     }));
     this.registerEvent(this.app.vault.on('delete', file => {
       if (this.changingDataDirectory) return;
-      if (this.isMobileReview) { this.externalChanged(); return; }
+      if (this.isMobile) { this.externalChanged(); return; }
       if (this.isDataFile(file.path) || file.path === this.dataFolder || this.dataFolder.startsWith(`${file.path}/`)) { this.externalChanged(); return; }
       this.run(async () => {
         await this.flushAnchors();
@@ -187,7 +186,10 @@ export default class HighnotePlugin extends Plugin {
       });
     }));
     this.registerEvent(this.app.workspace.on('layout-change', () => this.modeChanged()));
-    this.registerEvent(this.app.workspace.on('active-leaf-change', () => this.modeChanged()));
+    this.registerEvent(this.app.workspace.on('active-leaf-change', leaf => {
+      if (leaf?.view instanceof MarkdownView) this.annotationSource = leaf.view;
+      this.modeChanged();
+    }));
     this.app.workspace.onLayoutReady(() => {
       if (this.disposed) return;
       this.activePath = this.app.workspace.getActiveFile()?.extension === 'md' ? this.app.workspace.getActiveFile()!.path : '';
@@ -226,19 +228,20 @@ export default class HighnotePlugin extends Plugin {
     this.reviewVersion = this.store.version;
   }
   releaseReview(leaf: WorkspaceLeaf): void { this.reviewSources.delete(leaf); }
-  async refreshMobileReview(force = false): Promise<void> {
-    if (this.disposed || this.changingDataDirectory || !this.isMobileReview) return;
+  async refreshMobileData(force = false): Promise<void> {
+    if (this.disposed || this.changingDataDirectory || !this.isMobile) return;
+    const previousVersion = this.store.version;
     if (force) {
       if (this.refreshOperation) await this.refreshOperation;
       if (this.disposed) return;
-      this.reviewFiles?.invalidate();
+      this.mobileFiles?.invalidate();
     }
     await this.refreshData();
-    if (!this.disposed) { this.syncReview(); this.scheduleRefresh(); }
+    if (!this.disposed && this.store.version !== previousVersion) { this.syncReview(); this.scheduleRefresh(); }
   }
   async openReview(): Promise<void> {
     if (this.changingDataDirectory) return;
-    if (this.isMobileReview) await this.refreshMobileReview(true);
+    if (this.isMobile) await this.refreshMobileData(true);
     if (this.refreshOperation) await this.refreshOperation;
     await this.store.idle(); this.syncReview();
     const existing = this.app.workspace.getLeavesOfType(REVIEW_VIEW)[0];
@@ -251,8 +254,8 @@ export default class HighnotePlugin extends Plugin {
     if (this.disposed) return;
     const sourceRequest = ++this.reviewSourceRequest;
     const file = this.app.vault.getFileByPath(entry.filePath);
-    if (!file || (!this.isMobileReview && entry.fileMissing)) { this.notify(this.isMobileReview ? '当前设备找不到原文件，请确认笔记已同步。摘录和批注仍保留。' : '原文件已删除，保存的摘录和批注仍在回顾页中。'); return; }
-    if (this.isMobileReview) {
+    if (!file || (!this.isMobile && entry.fileMissing)) { this.notify(this.isMobile ? '当前设备找不到原文件，请确认笔记已同步。摘录和批注仍保留。' : '原文件已删除，保存的摘录和批注仍在回顾页中。'); return; }
+    if (this.isMobile) {
       const source = await this.app.vault.cachedRead(file);
       if (sourceRequest !== this.reviewSourceRequest || this.disposed) return;
       const prior = this.reviewSources.get(origin);
@@ -307,7 +310,7 @@ export default class HighnotePlugin extends Plugin {
     if (this.disposed || this.changingDataDirectory || this.exporting) return;
     this.exporting = true;
     try {
-      if (this.isMobileReview) await this.refreshMobileReview(true);
+      if (this.isMobile) await this.refreshMobileData(true);
       if (this.refreshOperation) await this.refreshOperation;
       await this.flushAnchors(); await this.store.idle(); this.syncReview();
       if (!['md', 'html', 'flomo_csv'].includes(format) || format === 'flomo_csv' && kind === 'highlights') throw new Error('导出格式不支持此类记录。');
@@ -338,7 +341,7 @@ export default class HighnotePlugin extends Plugin {
         if (format === 'flomo_csv') this.settings.flomo = {...config};
         try { await this.saveData(this.settings); } catch { this.settings.reviewExportFormat = previous.format; this.settings.flomo = previous.config; this.notify('文件已保存，但未能记住导出设置。'); }
         try {
-          if (format === 'html' && !this.isMobileReview) await this.openExportInBrowser(file);
+          if (format === 'html' && !this.isMobile) await this.openExportInBrowser(file);
           else if (format === 'md') {
             const leaf = this.app.workspace.getLeaf('tab'); await leaf.openFile(file);
             if (leaf.view instanceof MarkdownView) await leaf.setViewState({type: 'markdown', state: {...leaf.view.getState(), mode: 'preview'}, active: true});
@@ -353,19 +356,23 @@ export default class HighnotePlugin extends Plugin {
     const active = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (active) return active;
     const recent = this.app.workspace.getMostRecentLeaf()?.view;
-    return recent instanceof MarkdownView ? recent : null;
+    if (recent instanceof MarkdownView) return recent;
+    // The mobile drawer becomes active while its source note remains visible behind it.
+    if (this.isMobile && (recent instanceof CommentsView || this.app.workspace.getActiveViewOfType(CommentsView) || this.openModals.size)
+      && this.annotationSource && this.app.workspace.getLeavesOfType('markdown').some(leaf => leaf.view === this.annotationSource)) {
+      return this.annotationSource;
+    }
+    return null;
   }
   get canModify(): boolean {
-    if (this.isMobileReview || this.changingDataDirectory) return false;
+    if (this.changingDataDirectory) return false;
     const view = this.currentMarkdownView();
     return !this.disposed && view?.file?.extension === 'md' && view.getMode() === 'preview';
   }
   requireReadingMode(): void {
-    if (this.isMobileReview) throw new Error('手机版仅支持阅读回顾，评论与标记请在桌面端操作。');
     if (!this.canModify) throw new Error('请切换到阅读模式后再添加或修改评论与标记。');
   }
   isReadingContainer(container: HTMLElement): boolean {
-    if (this.isMobileReview) return false;
     const leaf = this.app.workspace.getLeavesOfType('markdown').find(item => item.view instanceof MarkdownView && item.view.contentEl.contains(container));
     return leaf?.view instanceof MarkdownView && leaf.view.getMode() === 'preview';
   }
@@ -374,7 +381,6 @@ export default class HighnotePlugin extends Plugin {
     this.scheduleRefresh();
   }
   async setHighlightColor(value: string): Promise<void> {
-    if (this.isMobileReview) return;
     if (this.changingDataDirectory) throw new Error('批注目录正在变更，请稍后修改设置。');
     this.settings.highlightColor = highlightColor(value);
     this.applyHighlightColor();
@@ -388,7 +394,7 @@ export default class HighnotePlugin extends Plugin {
   }
 
   async migrateDataDirectory(source: string, target: string, progress?: (progress: MigrationProgress) => void): Promise<MigrationResult> {
-    if (this.isMobileReview) throw new Error('请在桌面端迁移批注，手机同步新目录后即可查看。');
+    if (this.isMobile) throw new Error('请在桌面端迁移批注，手机同步新目录后即可查看。');
     const directory = annotationDirectory(target, this.app.vault.configDir);
     const result = await this.changeDataDirectory(directory, () => migrateAnnotations(this.app.vault.adapter, source, directory, {
       configDirectory: this.app.vault.configDir,
@@ -408,7 +414,7 @@ export default class HighnotePlugin extends Plugin {
     if (this.exporting || this.openModals.size || this.drafts.size) throw new Error('请先保存或取消正在输入的评论，并关闭批注或导出窗口，再切换目录。');
     this.changingDataDirectory = true;
     this.selectionToolbar.hide();
-    const previousReviewFiles = this.reviewFiles;
+    const previousMobileFiles = this.mobileFiles;
     let result: (MigrationResult & {verify: () => Promise<void>}) | undefined;
     let committed = false;
     try {
@@ -441,7 +447,7 @@ export default class HighnotePlugin extends Plugin {
       this.pendingAnchors.clear(); this.pendingHighlights.clear();
       this.knownSources.clear(); this.sourceVersions.clear(); this.reviewSources.clear();
       for (const doc of this.interactionDocuments.keys()) doc.getSelection()?.removeAllRanges();
-    } catch (error) { this.reviewFiles = previousReviewFiles; throw error; }
+    } catch (error) { this.mobileFiles = previousMobileFiles; throw error; }
     finally {
       this.changingDataDirectory = false;
       this.dataWritesPaused = false;
@@ -468,6 +474,34 @@ export default class HighnotePlugin extends Plugin {
     if (this.disposed || this.interactionDocuments.has(doc)) return;
     const component = this.addChild(new Component());
     this.interactionDocuments.set(doc, component);
+    let selectionTimer: number | null = null;
+    const selectionChanged = () => {
+      const win = doc.defaultView;
+      if (!win || this.selectionToolbar.interacting) return;
+      if (selectionTimer !== null) win.clearTimeout(selectionTimer);
+      selectionTimer = win.setTimeout(() => {
+        selectionTimer = null;
+        if (this.disposed || this.openModals.size) return;
+        const selection = doc.getSelection();
+        if (!selection || selection.isCollapsed) {
+          this.selectionToolbar.hide();
+          for (const render of this.readingViews) if (render.containerEl.ownerDocument === doc) render.flushDeferredRefresh();
+          return;
+        }
+        for (const render of this.readingViews) if (render.containerEl.ownerDocument === doc && render.hasSelection()) {
+          render.showSelectionAction(); break;
+        }
+      }, this.isMobile ? 180 : 0);
+    };
+    component.registerDomEvent(doc, 'selectionchange', selectionChanged);
+    component.registerDomEvent(doc, 'pointerup', selectionChanged);
+    component.registerDomEvent(doc, 'touchend', selectionChanged, {passive: true});
+    if (doc.defaultView?.visualViewport) {
+      const viewport = doc.defaultView.visualViewport;
+      viewport.addEventListener('resize', selectionChanged);
+      component.register(() => viewport.removeEventListener('resize', selectionChanged));
+    }
+    component.register(() => { if (selectionTimer !== null) doc.defaultView?.clearTimeout(selectionTimer); });
     doc.body.style.setProperty('--hn-highlight-color', this.settings.highlightColor);
     component.register(() => doc.body.style.removeProperty('--hn-highlight-color'));
     component.registerDomEvent(doc, 'pointerdown', event => {
@@ -489,7 +523,7 @@ export default class HighnotePlugin extends Plugin {
     return this.store.viewHighlights(path).map(item => ({...item, anchor: this.pendingHighlights.get(item.id) ?? item.anchor}));
   }
   editorChanged(path: string, before: string, after: string, changes: ChangeDesc, trusted = true): void {
-    if (this.isMobileReview || this.changingDataDirectory) return;
+    if (this.changingDataDirectory) return;
     const known = this.knownSources.get(path);
     if (!trusted && known !== undefined && (after === known || before !== known)) {
       if (after !== known) {
@@ -514,7 +548,6 @@ export default class HighnotePlugin extends Plugin {
     this.saveTimer = window.setTimeout(() => { this.saveTimer = null; this.run(() => this.flushAnchors()); }, 150);
   }
   async flushAnchors(): Promise<void> {
-    if (this.isMobileReview) return;
     if (this.saving) { await this.saving; if (this.pendingAnchors.size || this.pendingHighlights.size) await this.flushAnchors(); return; }
     this.saving = (async () => {
       const groups = new Map<string, {id: string; anchor: Anchor}[]>();
@@ -554,7 +587,6 @@ export default class HighnotePlugin extends Plugin {
   }
 
   compose(selection: NoteSelection): void {
-    if (this.isMobileReview) { this.notify('手机版仅支持阅读回顾，评论请在桌面端添加。'); return; }
     if (!this.canModify) { this.notify('请切换到阅读模式后添加评论。'); return; }
     this.selectionToolbar.hide();
     const key = `new:${selection.filePath}:${selection.from}:${selection.to}`;
@@ -588,6 +620,7 @@ export default class HighnotePlugin extends Plugin {
     const item = await this.store.createHighlight(file.path, source, anchor.from, anchor.to, () => this.requireReadingMode());
     const view = this.currentMarkdownView();
     view?.contentEl.ownerDocument.getSelection()?.removeAllRanges();
+    if (this.isMobile) { this.focusHighlight(item.id); this.scheduleRefresh(); this.notify('已标记所选文字。'); return; }
     await this.showHighlight(item.id);
   }
   async removeHighlight(id: string): Promise<void> {
@@ -604,7 +637,9 @@ export default class HighnotePlugin extends Plugin {
     modal.open();
   }
   async openSidebar(): Promise<void> {
-    if (this.isMobileReview) { await this.openReview(); return; }
+    const source = this.currentMarkdownView();
+    if (source) this.annotationSource = source;
+    if (this.isMobile) await this.refreshMobileData();
     let leaf = this.app.workspace.getLeavesOfType(COMMENTS_VIEW)[0];
     if (!leaf) {
       leaf = this.app.workspace.getRightLeaf(false) ?? undefined;
@@ -612,6 +647,13 @@ export default class HighnotePlugin extends Plugin {
       await leaf.setViewState({type: COMMENTS_VIEW, active: true});
     }
     await this.app.workspace.revealLeaf(leaf);
+  }
+  async returnToReading(): Promise<void> {
+    if (this.isMobile) this.app.workspace.rightSplit.collapse();
+    const view = this.annotationSource;
+    if (view && this.app.workspace.getLeavesOfType('markdown').some(leaf => leaf.view === view)) {
+      await this.app.workspace.revealLeaf(view.leaf);
+    }
   }
   async showThread(id: string): Promise<void> {
     const thread = this.store.get(id);
@@ -697,6 +739,7 @@ export default class HighnotePlugin extends Plugin {
       await leaf.setViewState({type: 'markdown', state: {...leaf.view.getState(), mode: 'preview'}, active: true});
     }
     await this.app.workspace.revealLeaf(leaf);
+    if (this.isMobile) this.app.workspace.rightSplit.collapse();
     if (request !== this.locationRequest) return;
     this.activePath = file.path; focus(); this.scheduleRefresh();
     if (!(leaf.view instanceof MarkdownView)) return;
@@ -741,7 +784,7 @@ export default class HighnotePlugin extends Plugin {
     return null;
   }
   private reconcileFile(file: TFile): Promise<void> {
-    if (this.isMobileReview || this.changingDataDirectory) return Promise.resolve();
+    if (this.changingDataDirectory) return Promise.resolve();
     const path = file.path;
     const previous = this.reconciliations.get(path) ?? Promise.resolve();
     const pending = previous.catch(() => undefined).then(() => this.reconcileCurrentFile(file, path));
@@ -855,7 +898,7 @@ export default class HighnotePlugin extends Plugin {
     } finally { this.exporting = false; }
   }
   async openExportInBrowser(file: TFile): Promise<void> {
-    if (!Platform.isDesktop || this.isMobileReview) return;
+    if (!Platform.isDesktop || this.isMobile) return;
     const {shell} = await import('electron');
     const adapter = this.app.vault.adapter;
     if (!(adapter instanceof FileSystemAdapter)) throw new Error('无法取得本地导出文件路径。');
@@ -863,7 +906,13 @@ export default class HighnotePlugin extends Plugin {
     if (failure) throw new Error('系统浏览器未能打开导出文件。');
   }
   private async reloadData(): Promise<void> {
-    if (this.isMobileReview) { await this.store.load(); return; }
+    if (this.isMobile) {
+      await this.flushAnchors(); await this.store.load();
+      // A phone may only have part of the vault downloaded. Absence is not deletion.
+      const file = this.app.vault.getFileByPath(this.activePath);
+      if (file) await this.reconcileFile(file);
+      return;
+    }
     try { await this.flushAnchors(); }
     catch (error) {
       // Only positional caches are discarded; saved messages and input drafts remain intact.
@@ -916,11 +965,11 @@ export default class HighnotePlugin extends Plugin {
   }
   private async watchData(directory = this.dataFolder): Promise<void> {
     if (!Platform.isDesktop) return;
-    if (this.isMobileReview || this.disposed || this.changingDataDirectory || directory !== this.dataFolder || this.dataWatcher || !(this.app.vault.adapter instanceof FileSystemAdapter)) return;
+    if (this.isMobile || this.disposed || this.changingDataDirectory || directory !== this.dataFolder || this.dataWatcher || !(this.app.vault.adapter instanceof FileSystemAdapter)) return;
     const generation = this.dataWatcherGeneration;
     // Guard before loading Node: mobile must be able to evaluate the bundle.
     const {watch} = await import('node:fs');
-    if (this.isMobileReview || this.disposed || this.changingDataDirectory || generation !== this.dataWatcherGeneration || directory !== this.dataFolder || this.dataWatcher) return;
+    if (this.isMobile || this.disposed || this.changingDataDirectory || generation !== this.dataWatcherGeneration || directory !== this.dataFolder || this.dataWatcher) return;
     const watcher = watch(this.app.vault.adapter.getFullPath(directory), (_event, filename) => {
       if (directory !== this.dataFolder || generation !== this.dataWatcherGeneration) return;
       if (filename && !filename.toString().endsWith('.json')) return;
@@ -943,8 +992,9 @@ export default class HighnotePlugin extends Plugin {
     });
   }
   private fileAccess(directory = this.dataFolder): ThreadFiles {
-    if (this.isMobileReview) { this.reviewFiles = new ReviewFiles(this.app.vault.adapter, directory); return this.reviewFiles; }
-    const files = new NoteFiles(this.app.vault.adapter, () => this.run(() => this.watchData(directory)), directory);
+    const files = this.isMobile ? new CachedNoteFiles(this.app.vault.adapter, directory)
+      : new NoteFiles(this.app.vault.adapter, () => this.run(() => this.watchData(directory)), directory);
+    if (files instanceof CachedNoteFiles) this.mobileFiles = files;
     const write = async (id: string, raw: string, action: () => Promise<unknown>) => {
       if (this.dataWritesPaused) throw new Error('批注目录正在变更，请完成后再修改批注。');
       if (directory !== this.dataFolder) throw new Error('批注目录已切换，请刷新后重试。');

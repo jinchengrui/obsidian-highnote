@@ -14,7 +14,7 @@ export class ItemView {
 }
 export class WorkspaceLeaf {}
 export class Modal {
-  constructor(app) { this.app = app; this.contentEl = app.document.createElement('div'); }
+  constructor(app) { this.app = app; this.contentEl = app.document.createElement('div'); this.modalEl = this.contentEl; }
   setTitle() {}
   close() { this.onClose(); }
 }
@@ -73,7 +73,7 @@ function discussion(id: string, count: number, from = 0): Thread {
       createdAt: now, updatedAt: now}))};
 }
 
-async function sidebar(records: Thread[], all = false) {
+async function sidebar(records: Thread[], all = false, mobile = false) {
   const window = new Window();
   const prototype = window.HTMLElement.prototype as unknown as ElementMethods;
   prototype.createEl = function(tag, options = {}) {
@@ -103,7 +103,7 @@ async function sidebar(records: Thread[], all = false) {
   const modals: Modal[] = [];
   let view: InstanceType<typeof CommentsView>;
   const plugin = {
-    activePath: '笔记.md', canModify: true, focused: '', focusedHighlight: '', drafts,
+    isMobile: mobile, openModals: new Set(), activePath: '笔记.md', canModify: true, focused: '', focusedHighlight: '', drafts,
     registerInteractionDocument() {}, requireReadingMode() {},
     report(error: unknown) { errors.push(error); },
     run(work: () => Promise<void>) { void work().catch(error => errors.push(error)); },
@@ -111,6 +111,7 @@ async function sidebar(records: Thread[], all = false) {
     clearFocus() { this.focused = ''; },
     openModal(modal: Modal) { modals.push(modal); modal.onOpen(); },
     store: {
+      version: 0,
       get(id: string) { const item = items.find(item => item.id === id); return item ? structuredClone(item) : undefined; },
       getHighlight() { return undefined; },
       viewAll() { return items; }, viewFile(path: string) { return items.filter(item => item.filePath === path); },
@@ -119,7 +120,7 @@ async function sidebar(records: Thread[], all = false) {
         const index = items.findIndex(item => item.id === id);
         if (index < 0) throw new Error('讨论已删除');
         const next = structuredClone(items[index]!);
-        edit(next); next.revision++; items[index] = next;
+        edit(next); next.revision++; items[index] = next; this.version++;
         view.render();
       },
       async deleteMessage(id: string, messageId: string) {
@@ -128,7 +129,7 @@ async function sidebar(records: Thread[], all = false) {
         const message = next.messages.find(message => message.id === messageId)!;
         message.deleted = true; message.body = ''; next.revision++;
         const removed = next.messages.every(message => message.deleted);
-        if (removed) items.splice(index, 1); else items[index] = next;
+        if (removed) items.splice(index, 1); else items[index] = next; this.version++;
         view.render();
         return removed;
       }
@@ -347,4 +348,35 @@ test('discussion batches replace cards and cross-batch navigation restores saved
   assert.equal(state.root.querySelectorAll('[data-thread-id].hn-card').length, 40);
   assert.equal(state.root.querySelector('[data-hn-thread-page]'), null);
   assert.equal(state.drafts.get('inline:thread-0'), '跨讨论批次草稿');
+});
+
+
+test('mobile reply uses a modal, retains cancelled drafts and sends multiline text explicitly', async () => {
+  const state = await sidebar([discussion('mobile', 1)], false, true);
+  const open = async () => {
+    state.card('mobile').querySelector<HTMLButtonElement>('.hn-mobile-reply')!.click();await state.settle();
+    return state.modals.at(-1)!;
+  };
+  const first=await open(), textarea=first.contentEl.querySelector<HTMLTextAreaElement>('textarea')!;
+  textarea.value='第一行\n第二行';textarea.dispatchEvent(new state.window.Event('input') as unknown as Event);
+  const enter=new state.window.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true});
+  textarea.dispatchEvent(enter as unknown as Event);await state.settle();
+  assert.equal(enter.defaultPrevented,false);assert.equal(state.items[0]?.messages.length,1);
+  first.close();assert.equal(state.drafts.get('inline:mobile'),'第一行\n第二行');
+  const next=await open();assert.equal(next.contentEl.querySelector<HTMLTextAreaElement>('textarea')!.value,'第一行\n第二行');
+  next.contentEl.querySelector<HTMLButtonElement>('.mod-cta')!.click();await state.settle();
+  assert.equal(state.items[0]?.messages.length,2);assert.equal(state.drafts.has('inline:mobile'),false);
+  assert.equal(state.errors.length,0);await state.window.happyDOM.abort();
+});
+
+
+test('mobile menu survives layout-only refresh but closes on data or permission changes', async () => {
+  const state=await sidebar([discussion('mobile-menu',1)],false,true);
+  let button=state.card('mobile-menu').querySelector<HTMLButtonElement>('.hn-message-more')!;
+  button.click();state.view.render();
+  assert.equal(button.getAttribute('aria-expanded'),'true');assert.ok(button.isConnected);
+  state.plugin.store.version++;state.view.render();assert.equal(button.getAttribute('aria-expanded'),'false');
+  button=state.card('mobile-menu').querySelector<HTMLButtonElement>('.hn-message-more')!;button.click();
+  state.plugin.canModify=false;state.view.render();assert.equal(button.getAttribute('aria-expanded'),'false');
+  assert.equal(state.root.querySelector('.hn-mobile-reply'),null);await state.window.happyDOM.abort();
 });
