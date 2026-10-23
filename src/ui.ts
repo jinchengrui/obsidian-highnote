@@ -31,8 +31,10 @@ export class MessageModal extends Modal {
   private busy = false;
   private composing = false;
   private releaseViewport?: () => void;
+  private focusTimer?: number;
   constructor(app: App, private title: string, private initial: string, private save: (body: string) => Promise<void>,
-    private report: (error: unknown) => void, private draft?: (body: string) => void, private submitLabel = '保存') { super(app); }
+    private report: (error: unknown) => void, private draft?: (body: string) => void, private submitLabel = '保存',
+    private quote = '') { super(app); }
   onOpen(): void {
     this.setTitle(this.title);
     this.contentEl.addClass('hn-modal');
@@ -43,6 +45,11 @@ export class MessageModal extends Modal {
       const resize = () => this.modalEl.style.setProperty('--hn-visible-height', `${viewport.height}px`);
       viewport.addEventListener('resize', resize); resize();
       this.releaseViewport = () => viewport.removeEventListener('resize', resize);
+    }
+    if (this.quote) {
+      const reference = this.contentEl.createEl('section', {cls: 'hn-compose-reference', attr: {'aria-label': '引用原文'}});
+      reference.createDiv({cls: 'hn-compose-reference-label', text: '原文'});
+      reference.createEl('blockquote', {cls: 'hn-compose-quote', text: this.quote, attr: {tabindex: '0', 'aria-label': '引用的原文'}});
     }
     const toolbar = this.contentEl.createDiv({cls: 'hn-format-toolbar'});
     this.textarea = this.contentEl.createEl('textarea', {attr: {'aria-label': '评论内容', rows: '8', placeholder: '写下评论…'}});
@@ -82,11 +89,21 @@ export class MessageModal extends Modal {
       if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.isComposing) { event.preventDefault(); void save(); }
     });
     this.textarea.focus();
+    // Obsidian focuses the first tabbable element after onOpen returns.
+    // Restore the editor after that pass while keeping the quote keyboard accessible.
+    if (this.quote && win) this.focusTimer = win.setTimeout(() => {
+      this.focusTimer = undefined;
+      this.textarea.focus();
+    }, 0);
   }
   private format(style: 'bold' | 'bullet' | 'ordered'): void {
     formatInput(this.textarea, style);
   }
-  onClose(): void { this.releaseViewport?.(); this.draft?.(this.textarea?.value ?? this.initial); this.contentEl.empty(); }
+  onClose(): void {
+    if (this.focusTimer !== undefined) this.contentEl.ownerDocument.defaultView?.clearTimeout(this.focusTimer);
+    this.focusTimer = undefined;
+    this.releaseViewport?.(); this.draft?.(this.textarea?.value ?? this.initial); this.contentEl.empty();
+  }
 }
 
 export class ConfirmModal extends Modal {
@@ -570,27 +587,29 @@ export class CommentsView extends ItemView {
         this.list.querySelector<HTMLElement>(`[data-thread-id="${thread.id}"] .hn-summary-body`)?.focus({preventScroll: true});
       });
     }
-    const current = this.visibleThreads.indexOf(thread.id);
-    for (const [offset, label, icon] of [[-1, '上一条讨论', 'chevron-up'], [1, '下一条讨论', 'chevron-down']] as const) {
-      const button = this.iconButton(tools, label, icon);
-      button.dataset.hnNavigation = offset < 0 ? 'previous' : 'next';
-      const target = this.visibleThreads[current + offset];
-      button.disabled = !target;
-      if (!target) button.removeAttribute('title');
-      button.addEventListener('keydown', event => {
-        if (event.key !== 'Enter' || event.isComposing) return;
-        event.preventDefault();
-        event.stopPropagation();
-        if (!event.repeat && !button.disabled) button.click();
-      });
-      button.addEventListener('click', () => {
-        if (button.disabled || !target || !this.plugin.store.get(target)) { this.render(); return; }
-        if (expanded && this.viewScope === 'all') this.expandedOverview = target;
-        this.plugin.focusThread(target);
-        this.page = Math.max(1, Math.ceil((current + offset + 1) / 40));
-        this.render();
-        this.focusNavigation(target, offset);
-      });
+    if (this.plugin.settings.showCommentNavigation === true) {
+      const current = this.visibleThreads.indexOf(thread.id);
+      for (const [offset, label, icon] of [[-1, '上一条讨论', 'chevron-up'], [1, '下一条讨论', 'chevron-down']] as const) {
+        const button = this.iconButton(tools, label, icon);
+        button.dataset.hnNavigation = offset < 0 ? 'previous' : 'next';
+        const target = this.visibleThreads[current + offset];
+        button.disabled = !target;
+        if (!target) button.removeAttribute('title');
+        button.addEventListener('keydown', event => {
+          if (event.key !== 'Enter' || event.isComposing) return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (!event.repeat && !button.disabled) button.click();
+        });
+        button.addEventListener('click', () => {
+          if (button.disabled || !target || !this.plugin.store.get(target)) { this.render(); return; }
+          if (expanded && this.viewScope === 'all') this.expandedOverview = target;
+          this.plugin.focusThread(target);
+          this.page = Math.max(1, Math.ceil((current + offset + 1) / 40));
+          this.render();
+          this.focusNavigation(target, offset);
+        });
+      }
     }
     if (this.plugin.canModify) {
       const resolve = this.iconButton(tools, thread.resolved ? '重新打开讨论' : '解决讨论', thread.resolved ? 'rotate-ccw' : 'circle-check', 'hn-resolve');
@@ -609,6 +628,11 @@ export class CommentsView extends ItemView {
           } finally { resolve.disabled = false; this.render(); }
         });
       });
+    }
+    if (!tools.childElementCount) tools.remove();
+    if (this.plugin.settings.showCommentNavigation !== true) {
+      header.addClass('hn-card-header-compact');
+      tools.addClass('hn-thread-tools-compact');
     }
   }
   private summary(thread: Readonly<Thread>): void {
@@ -744,7 +768,7 @@ export class CommentsView extends ItemView {
               const current = this.plugin.store.get(thread.id);
               if (current) this.messageBatches.reveal(current, message.id);
               this.render();
-            }, error => this.plugin.report(error)));
+            }, error => this.plugin.report(error), undefined, '保存', thread.anchor.quote));
           });
         }));
         menu.addSeparator();
@@ -807,7 +831,7 @@ export class CommentsView extends ItemView {
         }, error => this.plugin.report(error), body => {
           if (body) this.plugin.drafts.set(key, body); else this.plugin.drafts.delete(key);
           reply.setText(body ? '继续回复…' : '回复…');
-        }, '发送'));
+        }, '发送', thread.anchor.quote));
       }));
       return;
     }

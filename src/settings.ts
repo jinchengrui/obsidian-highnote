@@ -6,7 +6,7 @@ import type { FlomoConfig } from './flomo';
 import {DATA_FOLDER, LEGACY_DATA_ROOT} from './model';
 
 export const DEFAULT_HIGHLIGHT_COLOR = '#ffe083';
-export interface AnnotationSettings { dataDirectory?: string; highlightColor: string; exportFormat: 'md' | 'html'; reviewExportFormat?: 'md' | 'html' | 'flomo_csv'; flomo?: FlomoConfig }
+export interface AnnotationSettings { dataDirectory?: string; highlightColor: string; showCommentNavigation?: boolean; exportFormat: 'md' | 'html'; reviewExportFormat?: 'md' | 'html' | 'flomo_csv'; flomo?: FlomoConfig }
 
 export function highlightColor(value: unknown): string {
   return typeof value === 'string' && /^#[a-f0-9]{6}$/iu.test(value) ? value.toLowerCase() : DEFAULT_HIGHLIGHT_COLOR;
@@ -91,7 +91,17 @@ export class AnnotationSettingsTab extends PluginSettingTab {
         setting.addButton(button => button.setButtonText(this.migrationBusy ? '正在迁移…' : '迁移').setCta().onClick(() => { void migrate(); }));
         controls();
       }};
-    return [directory, this.annotationPlugin.isMobile ? mobile : migration, {name: '标记颜色', desc: '所有标记共用此颜色，选择后立即更新。', render: setting => {
+    const navigation: SettingDefinitionItem = {name: '显示评论导航按钮',
+      desc: '默认关闭。开启后，评论卡片右上角显示上一条、下一条按钮。',
+      render: setting => {
+        setting.addToggle(toggle => toggle.setValue(this.annotationPlugin.settings.showCommentNavigation === true).onChange(async value => {
+          toggle.setDisabled(true);
+          try { await this.annotationPlugin.setCommentNavigation(value); }
+          catch (error) { toggle.setValue(this.annotationPlugin.settings.showCommentNavigation === true); this.annotationPlugin.report(error); }
+          finally { toggle.setDisabled(false); }
+        }));
+      }};
+    return [directory, this.annotationPlugin.isMobile ? mobile : migration, navigation, {name: '标记颜色', desc: '所有标记共用此颜色，选择后立即更新。', render: setting => {
       setting.settingEl.addClass('hn-color-setting');
       const colors = setting.controlEl.createDiv({cls: 'hn-color-palette', attr: {role: 'group', 'aria-label': '预设标记颜色'}});
       const buttons: HTMLButtonElement[] = [];

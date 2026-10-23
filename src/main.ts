@@ -34,7 +34,7 @@ export default class HighnotePlugin extends Plugin {
   selectionToolbar = new SelectionToolbar();
   focused = '';
   focusedHighlight = '';
-  settings: AnnotationSettings = {highlightColor: DEFAULT_HIGHLIGHT_COLOR, exportFormat:'md'};
+  settings: AnnotationSettings = {highlightColor: DEFAULT_HIGHLIGHT_COLOR, showCommentNavigation: false, exportFormat:'md'};
   activePath = '';
   drafts = new Map<string, string>();
   readingViews = new Set<ReadingComments>();
@@ -69,6 +69,7 @@ export default class HighnotePlugin extends Plugin {
     this.activeDataDirectory = savedDataDirectory(saved && typeof saved === 'object' && 'dataDirectory' in saved ? saved.dataDirectory : undefined);
     this.settings.dataDirectory = this.activeDataDirectory;
     this.settings.highlightColor = highlightColor(saved && typeof saved === 'object' && 'highlightColor' in saved ? saved.highlightColor : undefined);
+    this.settings.showCommentNavigation = Boolean(saved && typeof saved === 'object' && 'showCommentNavigation' in saved && saved.showCommentNavigation === true);
     this.settings.exportFormat = saved && typeof saved === 'object' && 'exportFormat' in saved && saved.exportFormat === 'html' ? 'html' : 'md';
     this.settings.reviewExportFormat = saved && typeof saved === 'object' && 'reviewExportFormat' in saved && (saved.reviewExportFormat === 'html' || saved.reviewExportFormat === 'flomo_csv') ? saved.reviewExportFormat : 'md';
     this.settings.flomo = normalizeFlomoConfig(saved && typeof saved === 'object' && 'flomo' in saved ? saved.flomo : undefined);
@@ -387,6 +388,15 @@ export default class HighnotePlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
+  async setCommentNavigation(value: boolean): Promise<void> {
+    if (this.changingDataDirectory) throw new Error('批注目录正在变更，请稍后修改设置。');
+    await this.saveData({...this.settings, showCommentNavigation: value});
+    this.settings.showCommentNavigation = value;
+    for (const leaf of this.app.workspace.getLeavesOfType(COMMENTS_VIEW)) {
+      if (leaf.view instanceof CommentsView) leaf.view.render();
+    }
+  }
+
   async setDataDirectory(value: string): Promise<void> {
     const directory = annotationDirectory(value, this.app.vault.configDir);
     await this.changeDataDirectory(directory);
@@ -603,7 +613,8 @@ export default class HighnotePlugin extends Plugin {
       const thread = await this.store.create(originalFile.path, source, anchor.from, anchor.to, body, () => this.requireReadingMode());
       this.currentMarkdownView()?.contentEl.ownerDocument.getSelection()?.removeAllRanges();
       await this.showThread(thread.id);
-    }, error => this.report(error), body => body ? this.drafts.set(key, body) : this.drafts.delete(key));
+    }, error => this.report(error), body => body ? this.drafts.set(key, body) : this.drafts.delete(key),
+    '保存', selection.source.slice(selection.from, selection.to));
     this.openModal(modal);
   }
   async highlight(selection: NoteSelection): Promise<void> {

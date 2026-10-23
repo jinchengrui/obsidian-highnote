@@ -10,6 +10,8 @@ const cdp=(method,params={})=>JSON.parse(call('dev:cdp',`method=${method}`,`para
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(code){for(let i=0;i<70;i++){if(e(code))return;await pause(100);}throw new Error(`Timed out: ${code}`);}
 const folder=`导航聚焦验收${Date.now()}`;
+const originalNavigation=e(`app.plugins.plugins.highnote.settings.showCommentNavigation===true`);
+e(`(async()=>{await app.plugins.plugins.highnote.setCommentNavigation(true);return true})()`);
 const ids=e(`(async()=>{const p=app.plugins.plugins['highnote'];for(const m of p.openModals)m.close();await p.openSidebar();await app.vault.createFolder('${folder}');const source='# 评论导航'+String.fromCharCode(10,10)+'第一条原文。'+String.fromCharCode(10,10)+'第二条原文。'+String.fromCharCode(10,10)+'第三条原文。'+String.fromCharCode(10,10)+'第四条原文。'+String.fromCharCode(10,10)+Array.from({length:60},(_,i)=>'阅读段落 '+i+' 保持正文位置。').join(String.fromCharCode(10,10));const file=await app.vault.create('${folder}/笔记.md',source);const leaf=app.workspace.getLeaf('tab');await leaf.openFile(file);await leaf.setViewState({type:'markdown',state:{...leaf.view.getState(),mode:'preview'},active:true});await app.workspace.revealLeaf(leaf);await new Promise(r=>setTimeout(r,180));const ids=[];for(const [quote,body] of [['第一条','第一条评论'],['第二条','第二条评论'],['第三条','第三条评论'],['第四条','已解决评论']]){const at=source.indexOf(quote);ids.push((await p.store.create(file.path,source,at,at+6,body)).id)}await p.store.reply(ids[0],'回复保留全文');await p.store.update(ids[3],t=>{t.resolved=true});await p.showThread(ids[0]);const v=app.workspace.getLeavesOfType('highnote-comments')[0].view;v.viewScope='current';v.paneState.comments={status:'all',query:'',unlocatable:false};v.render();window.hnNavDensity={leaf};return ids})()`);
 const card=id=>`[data-thread-id="${id}"]`;
 await until(`document.querySelectorAll('.hn-card').length===4`);
@@ -29,6 +31,7 @@ e(`(()=>{document.querySelector('${card(ids[1])} [data-hn-navigation="previous"]
 assert.equal(e(`window.hnNavDensity.leaf.view.contentEl.querySelector('.markdown-preview-view').scrollTop`),readScroll);
 // Scheduled content refresh preserves the new target button and reveals tools without mouse movement.
 e(`(()=>{app.workspace.getLeavesOfType('highnote-comments')[0].view.render();return true})()`);focus(ids[0],'next');await pause(150);
+await until(`getComputedStyle(document.querySelector('${card(ids[0])} .hn-thread-tools')).opacity==='1'`);
 assert.equal(e(`getComputedStyle(document.querySelector('${card(ids[0])} .hn-thread-tools')).opacity`),'1');
 const metrics=e(`(()=>{const c=document.querySelector('${card(ids[0])}');return {padding:getComputedStyle(c).paddingTop,header:getComputedStyle(c.querySelector('.hn-card-header')).marginBottom,message:getComputedStyle(c.querySelector('.hn-message')).marginBottom,footer:getComputedStyle(c.querySelector('.hn-card-footer')).marginTop,reply:c.querySelector('textarea').getBoundingClientRect().height,font:getComputedStyle(c.querySelector('.hn-message-body')).fontSize}})()`);
 assert.deepEqual(metrics,{padding:'8px',header:'6px',message:'6px',footer:'3px',reply:22,font:'14px'});
@@ -55,4 +58,5 @@ assert.equal(e(`(()=>{const r=document.querySelector('.hn-sidebar');return r.scr
 const clip=e(`(()=>{const r=document.querySelector('.hn-sidebar').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()`);const result=cdp('Page.captureScreenshot',{format:'png',clip});writeFileSync(path.join(artifacts,name),Buffer.from(result.data,'base64'));
 }}
 e(`(()=>{document.body.classList.remove('theme-dark');document.body.classList.add('theme-light');document.querySelector('.hn-sidebar').style.width='';const v=app.workspace.getLeavesOfType('highnote-comments')[0].view;v.viewScope='current';v.query='';v.status='active';v.render();delete window.hnNavDensity;return true})()`);
+e(`(async()=>{await app.plugins.plugins.highnote.setCommentNavigation(${originalNavigation});return true})()`);
 console.log('PASS: navigation focuses corresponding enabled target button; native Enter continues; first/last fallback; refresh focus persists; source scroll unchanged; exact compact gaps/22px reply; light/dark resolved gray and normal text; selected blue priority; summaries/single result/narrow layout.');

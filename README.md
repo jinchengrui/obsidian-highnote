@@ -4,35 +4,55 @@
 
 Highnote brings compact comments and highlights to Markdown reading in Obsidian, a review dashboard with a date heatmap, and flexible exports for flomo. Your annotations stay in your vault without being inserted into the Markdown source.
 
-[Community page](https://community.obsidian.md/plugins/highnote) · [Download a release](https://github.com/jinchengrui/obsidian-highnote/releases) · [中文说明](#中文说明)
+[Community page](https://community.obsidian.md/plugins/highnote) · [Download a release](https://github.com/jinchengrui/obsidian-highnote/releases) · [Phone and tablet](#phone-and-tablet) · [Sync and migration](#your-notes-and-your-data) · [中文说明](#中文说明)
 
 **Obsidian 1.14.4+ · Desktop, phone and tablet annotations · Chinese interface · Free and open source**
 
 ![Highnote beside a Markdown note: full comments and replies, blue passage focus, and yellow highlights](docs/screenshots/showcase-comments.png)
 
-Screenshots show the current Chinese interface with example notes.
+Screenshots use example notes and the Chinese interface. Mobile screenshots below are captured in Obsidian mobile emulation.
 
 ## Compact comments beside your notes
 
-Select a passage in Reading view to add a comment or highlight. The compact sidebar keeps the original excerpt above your thoughts, with full comments and replies available in the discussion. Hover to reveal reply controls; the surrounding cards stay in place.
+Select a passage in Reading view to add a comment or highlight. The comment dialog displays the original passage above the input, including when editing a comment or replying on mobile; long passages scroll within the reference area. The compact sidebar keeps the original excerpt above your thoughts, with full comments and replies available in the discussion. On desktop, hover to reveal reply controls; the surrounding cards stay in place.
 
 - **Stay with the text.** Select a discussion to highlight its passage. Click its source excerpt to navigate; selecting comment text keeps your reading position.
 - **Keep a thought going.** Add replies, edit or delete individual messages, and resolve a discussion when you are finished. Comments support bold text and ordered or unordered lists.
 - **Find it again.** Browse the current note or all notes, search excerpts and comments, and filter resolved or unresolved discussions. All-note summaries group related messages to use less space.
 
+Previous/next discussion buttons are hidden by default to leave more room for the source excerpt. Enable **显示评论导航按钮** (Show comment navigation buttons) in **Settings → Highnote** when you need them; the change takes effect immediately.
+
 The sidebar follows Obsidian's light and dark themes. Highlights use one shared color, configurable in settings. This is a personal annotation tool; no author avatars, accounts, mentions, or collaboration setup are needed.
+
+## Phone and tablet
+
+Use **Highnote 1.0.34 or later** for the mobile reply dialog and compact landscape layout. Enable Highnote on each device; no mobile feature switch is required.
+
+1. Open a Markdown note in **Reading view**. Long-press a passage and adjust the selection.
+2. Tap **评论** (Comment) or **标记** (Highlight) in the bottom toolbar. Highlights use the color selected in settings and leave you in the note.
+3. Tap an underline or highlight to open its annotation drawer. You can edit or delete messages, add replies, and resolve or reopen discussions.
+4. Tap **回复** (Reply) to open a separate input dialog. Enter inserts a newline; **发送** (Send) submits the reply. Rotating the screen preserves your draft. **返回阅读** (Return to reading) closes the drawer.
+
+In short landscape windows, search and status filters are behind the **展开或收起筛选** (Expand or collapse filters) button. The reply dialog adapts to the available height when the keyboard opens. Tablet portrait, landscape and split-screen layouts use the available pane width.
+
+<p>
+  <img src="docs/screenshots/showcase-mobile-comments.png" alt="Mobile annotation drawer with a passage, complete comments and a visible reply button" width="300">
+  <img src="docs/screenshots/showcase-mobile-reply.png" alt="Mobile reply dialog with formatting controls and a Send button" width="300">
+</p>
+
+For Reading review, use the book icon or open the command palette and choose **Highnote: 打开阅读回顾**. **Highnote: 打开评论** opens the annotation drawer. If the commands are missing, check that Highnote is enabled and that you installed the current plugin files.
+
+Phone landscape, rotation and reduced-height input have been checked in Obsidian mobile emulation. Native iOS text selection, safe areas and the software keyboard have not yet been verified on physical iPhone or iPad hardware.
 
 ## Review your reading by date
 
-Open **阅读回顾** (Reading review) from the sidebar menu to bring annotations from across your vault into one workspace.
-
-On phones and tablets, long-press text in Reading view and tap **评论** (Comment) or **标记** (Highlight) in the bottom annotation toolbar. Tap an underline or highlight to open its annotation drawer, where you can reply, edit, delete or resolve discussions. Use the book icon or **Highnote: 打开阅读回顾** to browse saved annotations. The mobile calendar starts collapsed; touch controls and the composer adapt to the available screen and keyboard space.
+Open **阅读回顾** (Reading review) from the annotation sidebar menu or the **Highnote: 打开阅读回顾** command to bring saved annotations into one workspace. On mobile, the heatmap starts collapsed.
 
 ![Reading review dashboard with a date heatmap, search, and cards showing original excerpts followed by comments](docs/screenshots/showcase-review.png)
 
 - Switch between comments and highlights, and between the current note and all notes.
 - Use the heatmap to select a date, or search original excerpts, comments, and source note names. A matching discussion retains its context and related replies.
-- Open a card's source details and choose **回到原文** (Back to source) to return to the note. Wide windows can show the review and source side by side.
+- Open a card's source details and choose **回到原文** (Back to source) to return to the note. Wide desktop windows can show the review and source side by side; mobile opens the source in a note tab.
 
 The heatmap counts annotation records by creation date; it does not measure time spent reading. The review uses your current saved annotations. It does not create a second archive of discussions. Original excerpts are retained from the time you annotated them, so a later source edit does not erase what prompted the thought.
 
@@ -50,7 +70,7 @@ For a custom layout, use the template variables `{上下文}` (excerpt), `{评�
 
 ![Custom flomo export template with excerpt, comment, source, and date variables and a live CSV preview](docs/screenshots/showcase-template.png)
 
-**This is a local CSV export, not an automatic flomo sync.** Import the saved file using flomo's import feature. Highnote does not connect to flomo or require a flomo API key.
+**Export a local CSV, then import it into flomo.** Highnote does not connect to flomo or require a flomo API key.
 
 | Format | Best for | Contents |
 | --- | --- | --- |
@@ -64,16 +84,18 @@ Mobile review supports the same export formats. HTML and CSV are saved in the va
 
 ## Get started
 
-1. Open the [Highnote community page](https://community.obsidian.md/plugins/highnote). When **Add to Obsidian** is available, use it to install, then enable Highnote in **Settings → Community plugins**. If the listing is still under review, use the manual installation below.
-2. Open a Markdown note in **Reading view**. Select a passage and choose the comment or highlighter button.
-3. Continue the discussion in the sidebar, or open **阅读回顾** from its menu to review and export your annotations.
+1. In Obsidian, open **Settings → Community plugins → Browse**, search for **Highnote**, and install and enable it. You can also use the [community page](https://community.obsidian.md/plugins/highnote). If your client cannot find the listing, use the manual files below.
+2. Open a Markdown note in **Reading view**. Select a passage on desktop, or long-press it on a phone or tablet, and choose Comment or Highlight.
+3. Open the annotation drawer to continue a discussion, or Reading review to browse and export annotations.
 
-Annotation creation, editing, replies, deletion, and resolution require Reading view. Source mode and Live Preview let you view annotations without modifying them.
+Creating or modifying annotations requires Reading view. In Source mode or Live Preview, you can read existing annotations in the sidebar or Reading review; selection tools and passage decorations appear only in Reading view.
 
 <details>
-<summary>Manual installation</summary>
+<summary>Manual installation and updates</summary>
 
-Download `main.js`, `manifest.json`, and `styles.css` from the same [GitHub release](https://github.com/jinchengrui/obsidian-highnote/releases). Put all three in `.obsidian/plugins/highnote/` inside your vault, then enable Highnote in **Settings → Community plugins**. Use your actual configuration directory if it has a different name.
+Download **`main.js`, `manifest.json`, and `styles.css` from the same version** on [GitHub Releases](https://github.com/jinchengrui/obsidian-highnote/releases). Put all three in `.obsidian/plugins/highnote/` inside your vault, then enable Highnote in **Settings → Community plugins**. Use your actual configuration directory if it has a different name. After replacing the files for an update, disable and re-enable the plugin.
+
+GitHub's automatically generated **Source code** archives contain development files; the three built files above are what Obsidian loads. Installing or syncing the plugin does not automatically transfer your annotation JSON. See the data and sync instructions below.
 
 </details>
 
@@ -81,20 +103,48 @@ Download `main.js`, `manifest.json`, and `styles.css` from the same [GitHub rele
 
 Annotations use **`Highnote/annotations/`** by default, with one JSON file per annotated note path. Change **批注数据目录** (Annotation data directory) in **Settings → Highnote** to any vault-relative directory, such as `Highnote/annotations`, and click **应用** (Apply). Enter the complete data directory; another `annotations` folder is not appended. Desktop, phone and tablet should use the same relative path. Highnote does not insert annotation markup into your Markdown source. Include the selected directory in backups or sync; copying a `.md` file alone does not copy its annotations. Exports are reading copies, not a replacement for the JSON backup.
 
-**For Obsidian Sync**, set the data directory to `Highnote/annotations` on both devices, enable **Sync all other types** in Sync settings, and ensure `Highnote` is not excluded. [Obsidian Sync excludes ordinary hidden folders](https://help.obsidian.md/sync/settings), so users of the old `.obsidian-highnote/` directory should migrate it using the desktop settings below. After syncing, tap **刷新** (Refresh) in mobile Reading review.
+### Sync across devices
 
-**Migrating an existing directory (desktop):** Open **Settings → Highnote → 迁移批注数据** (Migrate annotation data). The source defaults to `.obsidian-highnote` and the destination is prefilled with `Highnote/annotations`; review or change the destination and click **迁移** (Migrate). Highnote reads note JSON files from the source and its `annotations` subfolder, validates and copies them, then switches to the destination automatically. Source files remain as a backup. Identical files are skipped; conflicting or invalid files stop migration without overwriting them. If copying is interrupted, the current directory stays unchanged and you can retry. Existing explicit directory settings are retained when upgrading. Match the new directory on your mobile device after migration. Exports and Markdown source files are not moved.
+Installing Highnote on another device does not copy your annotations. Sync **both the Markdown notes and the configured annotation directory**, and enable the plugin separately on each device.
 
-The Apply button only selects where Highnote reads and saves annotations. Use Migrate annotation data when you also want to copy your existing annotations. An absent directory is created when an annotation is first saved. Invalid paths, occupied parent folders and malformed annotation files prevent switching. Export files continue to use the vault root.
+For [Obsidian Sync](https://help.obsidian.md/sync/settings):
 
-Mobile supports comments, replies and highlights in Markdown Reading view. Long-press a passage, adjust the selection, then tap Comment or Highlight in the bottom annotation toolbar. Tap an existing underline or highlight to open the annotation drawer. Edit, delete and resolve actions are visible without hover; Tap Reply to open a composer; Enter inserts a newline and Send submits it. In short landscape viewports, search and filters are available through the filter button. Phone and tablet layouts adapt to the available pane width, orientation and keyboard. Unchanged JSON files and parsed records are cached, and active annotation/review views check for external changes every 15 seconds. Missing source notes on a partially synced device are not marked as deleted. Conflicting saves stop rather than overwrite newer data; the draft is retained.
+1. Connect the devices to the same remote vault.
+2. In **Settings → Highnote → 批注数据目录**, use the same vault-relative path on every device, for example `Highnote/annotations`, then click **应用** (Apply).
+3. Enable **Sync all other types** on each device so that JSON files are included. Make sure `Highnote` is not an excluded folder.
+4. Wait for synchronization, then tap **刷新** (Refresh) in mobile Reading review.
+
+Obsidian Sync excludes ordinary hidden folders such as `.obsidian-highnote`. Move that data using the migration option below before syncing it through the default visible directory. If you use another sync tool, configure it to include the annotation JSON files.
+
+<details>
+<summary>The mobile annotation directory or Reading review is empty</summary>
+
+- Check the configured directory on the device that has your comments. If its data is still in `.obsidian-highnote`, migrate it on desktop first.
+- If the desktop has `note-….json` files but the phone does not, check the sync settings and exclusions above. Copying only Markdown notes or plugin files does not transfer annotations.
+- If JSON files are already on the phone, check **批注数据目录**, tap Refresh, and clear any document, search or date filters in Reading review.
+- If the same directory remains unreadable, record the error shown by Highnote and include it in an issue. Keep the original JSON backup.
+
+</details>
+
+### Migrate existing annotations on desktop
+
+In **Settings → Highnote → 迁移批注数据**, the source is prefilled with `.obsidian-highnote` and the destination with `Highnote/annotations`. Review or change both paths, then click **迁移** (Migrate).
+
+Highnote reads note JSON files from the source directory and its `annotations` subfolder, validates and copies them, and switches to the destination only after successful validation and settings save. Source files remain as a backup; future edits go to the new directory. Identical files are skipped. Conflicting or unsupported files stop the migration without being overwritten. Interrupted copies can be retried.
+
+Upgrading retains an explicitly configured directory. Devices without a saved directory use `Highnote/annotations`. After migrating, point your phone and tablet to the new directory too. Markdown source and exported files are not moved.
+
+The **应用** (Apply) button only switches the data location; **迁移** copies existing annotations as well. A missing directory is created when the first annotation is saved.
+
+### Source changes and saved content
 
 | When this happens | Highnote's behavior |
 | --- | --- |
 | A tracked edit changes the text before a passage | The anchor follows the edit when its position can be established reliably |
 | A passage is removed or can no longer be located reliably | The saved excerpt and discussion remain available, marked as unlocatable |
 | A note or folder is renamed inside Obsidian | Annotation paths are updated |
-| A source note is deleted | Annotations remain available with a missing-source state |
+| A source note is deleted on desktop | Annotations remain available with a missing-source state |
+| A source note is unavailable on mobile | Saved annotations remain available; Highnote does not write a deletion state just because the local note is missing |
 | Another process changes the annotation file before a save | The conflicting save stops; the input draft is retained for retry |
 | The last message in a discussion is deleted | The empty discussion and underline are removed; a separate highlight is retained |
 
@@ -109,7 +159,7 @@ Selection works best with ordinary text in a paragraph or list. Selections acros
 - **Clipboard:** The HTML exporter includes a **Copy path** button. Clicking it writes the note's vault-relative path to the clipboard. It never reads the clipboard or monitors clipboard changes.
 - **External applications:** On desktop, opening an HTML export uses the system's default application for the saved local file. Mobile saves the file without launching an external application. Nothing is uploaded.
 
-The review and sidebar render records in batches, and long discussions have message pagination. All saved content remains searchable and available for export. Saving one note still involves its JSON file, so the cost grows with that note's annotations.
+The review and sidebar render records in batches, and long discussions have message pagination. Mobile reuses unchanged JSON files and checks for external changes every 15 seconds while a reading, annotation or review view is active. Unchanged data does not trigger a list redraw; manual Refresh forces a reread. All saved content remains searchable and available for export. Saving one note still involves its JSON file, so the cost grows with that note's annotations.
 
 ## 中文说明
 
@@ -121,9 +171,13 @@ Highnote 为 Obsidian 的 Markdown 阅读提供简洁的批注侧栏、按日期
 
 ### 简洁批注，把空间留给内容
 
-阅读模式选中文字，即可添加评论或高亮。侧栏按“原文在上、想法在下”展示，评论与回复保留全文，长讨论可翻页查看。回复入口悬停出现，不挤动卡片；选中的讨论带有淡蓝色背景，并与原文联动。
+阅读模式选中文字，即可添加评论或高亮。侧栏按“原文在上、想法在下”展示，评论与回复保留全文，长讨论可翻页查看。桌面端回复入口悬停出现，不挤动卡片；选中的讨论带有淡蓝色背景，并与原文联动。
+
+添加评论时，弹窗在输入框上方显示引用的原文，方便对照；编辑评论和移动端回复同样显示原文。长引用可在引用区内滚动查看全文，也可以复制。
 
 点击原文摘录才跳转，选择评论文字时保持阅读位置。可以连续回复、编辑或删除消息，也可以把讨论标记为已解决。支持当前文档和全部文档查看，全部文档会合并展示同一讨论，让浏览更紧凑。侧栏跟随明暗主题，标记使用设置中统一指定的颜色。
+
+上一条／下一条讨论按钮默认隐藏，右上角仅保留解决操作，原文摘录可以显示更多内容。需要连续浏览时，在“设置 → Highnote”中开启“显示评论导航按钮”，修改立即生效。
 
 [查看批注侧栏截图](docs/screenshots/showcase-comments.png)
 
@@ -131,7 +185,7 @@ Highnote 为 Obsidian 的 Markdown 阅读提供简洁的批注侧栏、按日期
 
 从侧栏菜单打开“阅读回顾”，集中查看当前文档或全部文档的评论、回复与标记。热力图按创建日期展示记录数量，点击日期即可回看当天的记录；搜索支持原文、评论和来源文档。热力图统计批注记录，不统计阅读时长。
 
-回顾页跟随已保存批注的变化，不会另外快照一份讨论。创建批注时的原文摘录会保留，便于理解当时的语境。打开“查看出处与讨论”后，可以通过“回到原文”定位；窗口足够宽时，回顾与原文并排显示。
+回顾页跟随已保存批注的变化，不会另外快照一份讨论。创建批注时的原文摘录会保留，便于理解当时的语境。打开“查看出处与讨论”后，可以通过“回到原文”定位。桌面窗口足够宽时，回顾与原文并排显示；手机和平板在笔记标签页打开原文。
 
 [查看回顾看板](docs/screenshots/showcase-review.png) · [查看原文联动](docs/screenshots/showcase-source.png)
 
@@ -147,44 +201,90 @@ Highnote 为 Obsidian 的 Markdown 阅读提供简洁的批注侧栏、按日期
 
 ### 安装与使用
 
-1. 打开 [Highnote 官方社区页](https://community.obsidian.md/plugins/highnote)，安装入口可用时点击 **Add to Obsidian**，再到“设置 → 第三方插件”启用。若仍处于审核中，可从 [GitHub Releases](https://github.com/jinchengrui/obsidian-highnote/releases) 下载同一版本的三个安装文件，放入 `.obsidian/plugins/highnote/`。
-2. 打开 Markdown 笔记并切换到**阅读模式**，选中文字添加评论或标记。
-3. 从侧栏菜单进入“阅读回顾”，集中查看记录，或在右上角选择导出。
+1. 在 Obsidian 的“设置 → 第三方插件 → 浏览”中搜索 **Highnote**，安装并启用，也可以从 [官方社区页](https://community.obsidian.md/plugins/highnote)进入。如果客户端暂时找不到插件，可按下方说明手动安装。
+2. 打开 Markdown 笔记并切换到**阅读模式**。电脑选中文字，手机和平板长按选中文字，再点击评论或标记。
+3. 从批注侧栏菜单或“Highnote：打开阅读回顾”命令进入回顾页，浏览记录并导出。
 
-手机和平板在 Markdown **阅读模式**下，长按选中文字并调整范围，点击底部的“评论”或“标记”。点击已有原文下划线或高亮可打开批注抽屉，查看全文、回复、编辑、删除、解决或重新打开讨论。点击“回复”打开独立输入弹窗，按回车换行，点击“发送”提交；标记完成后停留在正文。“返回阅读”可收起抽屉。编辑模式下仅可查看批注。
+<details>
+<summary>手动安装与更新</summary>
 
-界面按可用宽度适配大屏手机、iPad 横竖屏及分屏，主要触控按钮至少 44 像素，输入字号 16 像素，评论与回复弹窗随键盘可视区域调整。手机横屏高度较小时，搜索与筛选收进顶部筛选按钮，给评论列表留出空间。从书本图标或“Highnote：打开阅读回顾”命令进入回顾页，支持搜索、日期筛选和 Markdown、HTML、flomo CSV 导出。
+从 [GitHub Releases](https://github.com/jinchengrui/obsidian-highnote/releases) 下载**同一版本**的 `main.js`、`manifest.json`、`styles.css`，放入笔记库的 `.obsidian/plugins/highnote/`，再启用插件。若修改过 Obsidian 配置目录，请使用实际目录。更新时替换这三个文件，然后关闭并重新启用插件。
 
-**使用 Obsidian Sync 时**，在电脑和手机的“设置 → Highnote → 批注数据目录”都填 `Highnote/annotations`，点击“应用”。两端分别开启“同步所有其他类型”，确认 `Highnote` 不在排除目录中，重启应用后等待同步，再点手机回顾页“刷新”。[Obsidian Sync 不同步普通隐藏目录](https://help.obsidian.md/sync/settings)，使用旧 `.obsidian-highnote` 目录的用户，请先在桌面端按下方说明迁移。
+GitHub 自动生成的 **Source code** 压缩包是开发源码。Obsidian 运行插件需要上面三个构建文件。安装插件不会自动带来其他设备的批注，批注数据需要另外同步。
 
-**迁移历史批注（桌面端）：** 打开“设置 → Highnote → 迁移批注数据”，源目录默认 `.obsidian-highnote`，目标目录已预填 `Highnote/annotations`，确认或修改后点击“迁移”。插件会识别源目录及其 `annotations` 子目录中的批注 JSON，校验复制后自动切换。源文件保留为备份；相同文件跳过，遇到冲突或损坏则停止，不覆盖。中断时当前目录不变，已复制文件可供重试复用。升级保留明确配置过的目录，未配置时采用新默认；手机同步后应使用同一个新目录。迁移不搬动正文或导出文件。
+</details>
 
-配置填写完整的笔记库内相对目录，不会自动再追加 `annotations`。“应用”只切换读写位置；需要同时搬移已有批注时，请使用“迁移批注数据”。不存在的目录在首次保存批注时创建。路径无效、同名文件占用目录或目标批注文件损坏时不切换。导出文件继续存笔记库根目录。
+### 手机与平板批注
 
-手机端与电脑使用相同的批注 JSON，通过原子校验保存修改；遇到同步冲突时停止保存并保留输入草稿。原笔记尚未同步或暂时不可用时，不将批注标为已删除。阅读或批注界面处于前台时每 15 秒检查文件信息，复用未变化的数据；手动刷新会重新读取全文。
+使用 **Highnote 1.0.34 及以上**可获得独立回复弹窗和紧凑横屏布局。每台设备启用插件即可，无需额外开启移动端开关。
 
-非阅读模式可以查看批注，不能新增、回复、编辑、删除或解决讨论。没有账号、多人协作、提及或提醒功能，适合个人阅读和写作。
+1. 在 Markdown **阅读模式**下长按文字，调整选区，再点底部“评论”或“标记”。标记使用设置中的默认颜色，完成后留在正文。
+2. 点原文下划线或高亮打开批注抽屉，可查看全文、回复、编辑、删除、解决或重新打开讨论。
+3. 点击“回复”打开独立输入弹窗，回车换行，点击“发送”提交。旋转屏幕后草稿保留；“返回阅读”可收起批注抽屉。
 
-导出范围可选当前文档或全部文档，文件默认存笔记库根目录，重名自动追加序号。搜索、日期筛选及分页不改变导出范围，未发送草稿和已删除消息不导出。
+手机横屏高度较小时，搜索与状态筛选默认收起，点击顶部“展开或收起筛选”按钮打开。评论和回复弹窗按键盘可视区域调整，iPad 横竖屏及分屏按可用宽度布局。编辑模式和实时预览下，可以在侧栏或回顾页查看批注；新增、修改和正文装饰仅在阅读模式下提供。
+
+[查看手机批注](docs/screenshots/showcase-mobile-comments.png) · [查看回复弹窗](docs/screenshots/showcase-mobile-reply.png)
+
+从书本图标或命令面板里的 **Highnote：打开阅读回顾** 进入回顾页；**Highnote：打开评论** 打开批注抽屉。搜索不到命令时，先检查插件是否启用、安装文件是否为新版。
+
+手机横屏、旋转和低可视高度输入已经过 Obsidian 移动模拟验证。iOS 原生选词菜单、安全区与软键盘尚未在 iPhone、iPad 真机上验证。
+
+### 同步和迁移批注
+
+批注默认位于 `Highnote/annotations/`，每篇有批注的笔记对应一个 JSON 文件。电脑、手机和平板都应在“设置 → Highnote → 批注数据目录”中填写相同的完整相对目录。插件不会再追加一层 `annotations`。
+
+**使用 Obsidian Sync 时：**
+
+1. 每台设备连接同一个远程库，并将批注目录设为相同路径，例如 `Highnote/annotations`，点击“应用”。
+2. 每台设备开启“同步所有其他类型”，让 JSON 参与同步；确认 `Highnote` 不在排除目录中。
+3. 等待笔记和批注文件同步完成，再到手机阅读回顾点击“刷新”。
+
+[Obsidian Sync 不同步普通隐藏目录](https://help.obsidian.md/sync/settings)，使用旧 `.obsidian-highnote` 目录时，请先在桌面端迁移。其他同步工具也需要包含批注 JSON。安装插件、只同步 Markdown 或只同步插件配置，都不能替代批注目录同步。
+
+**迁移历史批注（桌面端）：** 打开“设置 → Highnote → 迁移批注数据”，源目录默认 `.obsidian-highnote`，目标目录预填 `Highnote/annotations`。确认或修改后点击“迁移”。插件读取源目录及其 `annotations` 子目录中的批注 JSON，校验复制并保存设置成功后才切换目录。
+
+源文件保留为备份，后续修改写入新目录。相同文件跳过，冲突或格式不支持时停止，不覆盖；中断后可重试。升级保留明确配置过的目录，未配置时使用新默认。迁移后，手机和平板也要指向新目录。正文和导出文件不搬动。
+
+“应用”只切换读写位置；“迁移”同时复制已有批注。不存在的目录在首次保存批注时创建。
+
+<details>
+<summary>手机目录为空，或阅读回顾没有内容</summary>
+
+- 先检查有评论的那台设备当前使用的目录。数据还在 `.obsidian-highnote` 时，先在桌面端迁移。
+- 电脑已有 `note-….json`，手机没有：检查同步类型和排除目录，等待 JSON 同步。插件安装成功并不表示批注也已同步。
+- 手机已有 JSON：确认 Highnote 配置指向该目录，点击“刷新”，清除回顾页的文档范围、搜索和日期筛选。
+- 仍无法读取时，保留原 JSON，记录 Highnote 的报错内容并反馈。
+
+</details>
+
+### 导出范围
+
+在阅读回顾选择当前文档或全部文档后导出。文件保存到笔记库根目录，重名自动追加序号；搜索、日期筛选和分页不改变导出范围。未发送草稿和已删除消息不导出。
+
+Markdown 和 HTML 支持评论、标记，flomo CSV 支持评论及可选回复。手机和平板也支持这些格式；HTML 与 CSV 保存到库内，交由合适的应用打开或导入。
 
 ### 备份、边界与隐私
 
 - **备份整个批注目录。** 评论和标记默认位于 `Highnote/annotations/`，可在“批注数据目录”中配置。单独复制 Markdown 不会带走批注，导出文件也不能替代 JSON 备份。旧目录可在桌面端通过“迁移批注数据”手动迁移。
 - **原文变化后保留想法。** 能可靠确认位置的编辑会更新锚点；原文删除或无法定位时保留摘录与讨论，不自动绑定到另一段相似文字，也不提供手动重新绑定。
-- **保存冲突时停止覆盖。** 发现同步工具或其他窗口改动文件时，停止当前保存，保留草稿供重新加载后重试。多设备同时写入仍可能冲突；未提交草稿不跨插件重启保存。
+- **保存冲突时停止覆盖。** 保存前检测到文件被同步工具或其他窗口改动时，停止当前保存，保留草稿供重新加载后重试。多设备同时写入仍可能冲突；未提交草稿不跨插件重启保存。
 - **本地处理。** 插件不发起网络请求，不上传批注，不含遥测、广告、自更新或自动安装依赖。批注由 Obsidian DataAdapter 访问；桌面端 `node:fs.watch` 仅监听当前库的批注目录，卸载时关闭，手机版不加载 Node.js 或 Electron 模块。
-- **按操作使用剪贴板。** HTML 导出页的“复制路径”只在点击时写入库内相对路径，不读取或监听剪贴板；打开 HTML 文件交给系统默认应用。
+- **手机缺少笔记时保留批注。** 原笔记尚未同步或暂时不可用时，不自动写入删除状态。移动端复用未变化的 JSON，阅读、批注或回顾界面活跃时每 15 秒检查文件变化；数据没变时不重画列表。
+- **按操作使用剪贴板。** HTML 导出页的“复制路径”只在点击时写入库内相对路径，不读取或监听剪贴板；桌面端打开 HTML 文件时交给系统默认应用，移动端仅保存文件。
 
 ## Development
 
-Use Node.js 22 or later. Install locked dependencies with `npm ci`; run `npm run dev` for a watch build. Before releasing, run `npm run lint`, `npm test`, `npm run build`, and `npm run package`. Installable files are written to `dist/highnote/`.
+Use Node.js 22 or later. Install locked dependencies with `npm ci`; run `npm run dev` for a watch build. Before releasing, run `npm run check:source`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, and `npm run package`. Installable files are written to `dist/highnote/`.
+
+When copying source into a local checkout, merge the complete source tree into the repository root, including `src/`, `scripts/`, `tests/`, and `.github/`. Keep the checkout's `.git` directory. `npm run check:source` reports missing entry points, local imports and build scripts.
 
 The GitHub Actions workflow checks the project and generates artifact attestations for builds from the public repository's default branch. Upload the three files from that run unchanged to a GitHub Release whose tag exactly matches `manifest.json`'s version, without a `v` prefix. Local build files do not automatically have GitHub attestations.
+
+如果通过 GitHub Desktop 更新源码，请把完整源码包的内容合并复制到仓库根目录，确认 `src`、`scripts`、`tests` 和 `.github` 齐全，保留原有 `.git`。推送后等待最新一次 Actions 全部通过，再使用该次构建产物发布。
 
 ## License and feedback
 
 MIT. Copyright (c) 2026 jinchengrui. See [LICENSE](LICENSE).
 
 [Report an issue](https://github.com/jinchengrui/obsidian-highnote/issues) · [更新记录](docs/更新记录.md)
-
-The interaction concept was inspired by [FloatMark](https://github.com/jinchengrui/obsidian-float-mark). Highnote was implemented independently and does not include source code from that project.
